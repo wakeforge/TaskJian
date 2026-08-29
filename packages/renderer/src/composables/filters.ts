@@ -1,0 +1,44 @@
+import type { FilterState, TaskNode } from '@taskjian/shared';
+
+/**
+ * 过滤规则组合（设计 §5.4.1）：
+ * - group：若 filter.groupId 非空，只保留 task.groupId === filter.groupId 的根任务（及其子树）
+ * - tag：若 filter.tagNames 非空，保留 task.tags 与 filter.tagNames 有交集的任务
+ * - status：若 filter.statuses 非空，保留 task.status 在 filter.statuses 中的任务
+ * 三维度 AND 组合；同一维度内多选 = OR。
+ */
+export function applyFilter(tasks: TaskNode[], filter: FilterState): TaskNode[] {
+  let result = tasks;
+
+  // group 过滤：根任务命中 + 其全部子孙
+  if (filter.groupId) {
+    const keep = new Set<string>();
+    const matchingRootIds = tasks
+      .filter((t) => t.parentId === null && t.groupId === filter.groupId)
+      .map((t) => t.id);
+
+    // BFS 收集命中的根及其子孙
+    const queue = [...matchingRootIds];
+    while (queue.length) {
+      const id = queue.pop()!;
+      if (keep.has(id)) continue;
+      keep.add(id);
+      for (const t of tasks) {
+        if (t.parentId === id && !keep.has(t.id)) queue.push(t.id);
+      }
+    }
+    result = result.filter((t) => keep.has(t.id));
+  }
+
+  // tag 过滤：tags 与 filter.tagNames 有交集
+  if (filter.tagNames.length > 0) {
+    result = result.filter((t) => t.tags.some((tag) => filter.tagNames.includes(tag)));
+  }
+
+  // status 过滤：status ∈ filter.statuses
+  if (filter.statuses.length > 0) {
+    result = result.filter((t) => filter.statuses.includes(t.status));
+  }
+
+  return result;
+}

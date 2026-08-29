@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TaskJian Design Tokens */
+
+:root {
+  /* Base scale */
+  --taskjian-bg: #f8f9fb;
+  --taskjian-surface: #ffffff;
+  --taskjian-surface-2: #f1f3f5;
+  --taskjian-surface-3: #e5e7eb;
+
+  --taskjian-ink: #1f2937;
+  --taskjian-ink-2: #6b7280;
+  --taskjian-ink-3: #9ca3af;
+
+  --taskjian-line: #e5e7eb;
+  --taskjian-line-strong: #d1d5db;
+
+  /* Brand primary: indigo */
+  --taskjian-primary: #4f46e5;
+  --taskjian-primary-600: #4338ca;
+  --taskjian-primary-50: #eef2ff;
+  --taskjian-primary-foreground: #ffffff;
+
+  /* Semantic aliases for head contract */
+  --taskjian-background: var(--taskjian-bg);
+  --taskjian-foreground: var(--taskjian-ink);
+  --taskjian-card: var(--taskjian-surface);
+  --taskjian-card-foreground: var(--taskjian-ink);
+  --taskjian-popover: var(--taskjian-surface);
+  --taskjian-popover-foreground: var(--taskjian-ink);
+  --taskjian-muted: var(--taskjian-surface-2);
+  --taskjian-muted-foreground: var(--taskjian-ink-2);
+  --taskjian-border: var(--taskjian-line);
+  --taskjian-input: var(--taskjian-line);
+  --taskjian-ring: var(--taskjian-primary);
+
+  /* Radius */
+  --taskjian-radius-small: 4px;
+  --taskjian-radius-medium: 8px;
+  --taskjian-radius-large: 12px;
+
+  /* State colors */
+  --taskjian-state-success: #30a46c;
+  --taskjian-state-warning: #f59e0b;
+  --taskjian-state-error: #ef4444;
+  --taskjian-state-info: #3b82f6;
+
+  /* Status-specific */
+  --taskjian-status-todo: #6b7280;
+  --taskjian-status-progress: #3b82f6;
+  --taskjian-status-blocked: #f59e0b;
+  --taskjian-status-done: #30a46c;
+
+  /* Shadows */
+  --taskjian-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 1px rgba(15, 23, 42, 0.03);
+  --taskjian-shadow-2: 0 8px 24px -8px rgba(15, 23, 42, 0.18);
+  --taskjian-shadow-3: 0 24px 60px -20px rgba(15, 23, 42, 0.30);
+
+  /* Typography */
+  --taskjian-font-sans: Inter, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --taskjian-font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", monospace;
+}
+
+/* Dark mode (optional baseline) */
+html.dark {
+  --taskjian-bg: #0b0b0f;
+  --taskjian-surface: #14141a;
+  --taskjian-surface-2: #1c1c24;
+  --taskjian-surface-3: #272730;
+  --taskjian-ink: #f3f4f6;
+  --taskjian-ink-2: #a1a1aa;
+  --taskjian-ink-3: #71717a;
+  --taskjian-line: #272730;
+  --taskjian-line-strong: #3f3f4a;
+  --taskjian-primary: #6366f1;
+  --taskjian-primary-600: #818cf8;
+  --taskjian-primary-50: #1e1b4b;
+  --taskjian-primary-foreground: #ffffff;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+body { font-family: var(--taskjian-font-sans); }
