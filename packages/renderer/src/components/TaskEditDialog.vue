@@ -177,6 +177,22 @@ watch(
     if (!open) return;
     const task = findTask(ui.taskEditId);
     loadFromTask(task);
+    // 新建模式：应用预填默认值（如「创建子项」时继承父级任务与分组）
+    if (!task) {
+      const d = ui.taskEditDefaults;
+      if (d.parentId !== undefined) {
+        form.value.parentId = d.parentId;
+        const parent = parentOptions.value.find((t) => t.id === d.parentId);
+        parentSearch.value = parent
+          ? `${parent.code ? `${parent.code}: ` : ''}${parent.title}`
+          : '';
+      }
+      if (d.groupId !== undefined) {
+        form.value.groupId = d.groupId;
+        const grp = d.groupId ? groupOptions.value.find((g) => g.id === d.groupId) : null;
+        groupSearch.value = grp?.name ?? '';
+      }
+    }
   },
   { immediate: true },
 );
@@ -292,7 +308,7 @@ onUnmounted(() => {
               <textarea
                 id="input-title"
                 v-model="form.title"
-                rows="5"
+                rows="3"
                 placeholder="输入任务内容..."
                 class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm resize-y focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
               ></textarea>
@@ -367,15 +383,15 @@ onUnmounted(() => {
               <!-- 分组：可筛选 combobox -->
               <div class="flex flex-col gap-1.5">
                 <label class="text-[13px] font-medium text-foreground">分组</label>
-                <div class="relative">
-                  <input
-                    type="text"
-                    v-model="groupSearch"
-                    placeholder="（无，未分组）"
-                    class="w-full px-3 py-2 pr-8 rounded-md border border-border bg-card text-foreground text-sm focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-                    @focus="openGroupDropdown"
-                    @blur="closeGroupDropdown"
-                  />
+              <div class="relative">
+                <input
+                  type="text"
+                  v-model="groupSearch"
+                  placeholder="输入或选择分组，留空则不分组"
+                  class="w-full px-3 py-2 pr-8 rounded-md border border-border bg-card text-foreground text-sm focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                  @focus="openGroupDropdown"
+                  @blur="closeGroupDropdown"
+                />
                   <button
                     v-if="form.groupId"
                     type="button"
@@ -398,9 +414,12 @@ onUnmounted(() => {
                       {{ g.name }}
                     </li>
                   </ul>
-                </div>
+                <p class="mt-1 text-xs text-muted-foreground">
+                  可从下拉列表选择已有分组，或直接输入新名称——保存后将自动创建该分组；清空则移出分组
+                </p>
               </div>
             </div>
+          </div>
 
             <!-- 父级任务：可筛选 combobox -->
             <div class="flex flex-col gap-1.5">
@@ -443,13 +462,13 @@ onUnmounted(() => {
 
             <div class="flex flex-col gap-1.5">
               <label class="text-[13px] font-medium text-foreground" for="input-note">备注</label>
-              <textarea
+              <input
                 id="input-note"
                 v-model="form.note"
-                rows="4"
+                type="text"
                 placeholder="补充说明..."
-                class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm resize-y focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-              ></textarea>
+                class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+              />
             </div>
           </div>
         </div>

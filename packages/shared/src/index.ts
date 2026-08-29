@@ -84,16 +84,16 @@ export interface FilterState {
   groupId: string | null;
   tagNames: string[];
   statuses: TaskStatus[];
+  /** 任务搜索关键字（title/code/note 包含匹配，空 = 不过滤） */
+  searchText: string;
 }
 
-/** 默认标签（PDF 指定） */
+/** 默认标签：优先级等级（紧急/高/中/低） */
 export const DEFAULT_TAGS: TagDef[] = [
-  { name: 'P0', color: '#e5484d' },
-  { name: 'P1', color: '#e5484d' },
-  { name: 'S1', color: '#8e4ec6' },
-  { name: 'S2', color: '#8e4ec6' },
-  { name: 'T0', color: '#3e63dd' },
-  { name: 'ED', color: '#30a46c' },
+  { name: '紧急', color: '#e5484d' },
+  { name: '高', color: '#f59e0b' },
+  { name: '中', color: '#3e63dd' },
+  { name: '低', color: '#30a46c' },
 ];
 
 /** 状态 → 前缀字符映射 */

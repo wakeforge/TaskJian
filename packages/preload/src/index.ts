@@ -88,12 +88,14 @@ const api = {
     update: (patch: Partial<SettingsFile>): Promise<IpcResult<SettingsFile>> =>
       ipcRenderer.invoke('settings:update', patch),
   },
-  // 窗口控制：minimize / toggleMaximize / close，供自定义 TitleBar 调用。
+  // 窗口控制：minimize / toggleMaximize / close / openExternal，供自定义 TitleBar 及「关于」弹窗调用。
   // 主进程通过 BrowserWindow.getFocusedWindow() 取当前窗口实例。
   window: {
     minimize: (): Promise<void> => ipcRenderer.invoke('window:minimize'),
     toggleMaximize: (): Promise<void> => ipcRenderer.invoke('window:toggleMaximize'),
     close: (): Promise<void> => ipcRenderer.invoke('window:close'),
+    openExternal: (url: string): Promise<void> =>
+      ipcRenderer.invoke('window:openExternal', url),
   },
   // 通用事件监听器：用于主进程向渲染进程推送事件
   on: (channel: string, cb: (...args: unknown[]) => void): void => {
