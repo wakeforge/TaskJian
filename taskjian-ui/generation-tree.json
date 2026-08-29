@@ -1,0 +1,25 @@
+{
+  "root": {
+    "id": "root",
+    "type": "root",
+    "status": "generated",
+    "children": [
+      {
+        "id": "page-main",
+        "type": "page",
+        "status": "generated",
+        "filePath": "pages/main.html",
+        "stateRole": "base",
+        "stateGroupId": "sg-main-app",
+        "children": [
+          { "id": "page-tag-filter", "type": "derived", "status": "generated", "filePath": "pages/tag-filter.html", "baseNodeId": "page-main" },
+          { "id": "page-status-filter", "type": "derived", "status": "generated", "filePath": "pages/status-filter.html", "baseNodeId": "page-main" },
+          { "id": "page-tag-management", "type": "derived", "status": "generated", "filePath": "pages/tag-management.html", "baseNodeId": "page-main" },
+          { "id": "page-archive", "type": "derived", "status": "generated", "filePath": "pages/archive.html", "baseNodeId": "page-main" },
+          { "id": "page-empty-state", "type": "derived", "status": "generated", "filePath": "pages/empty-state.html", "baseNodeId": "page-main" },
+          { "id": "page-task-edit", "type": "derived", "status": "generated", "filePath": "pages/task-edit.html", "baseNodeId": "page-main" }
+        ]
+      }
+    ]
+  }
+}

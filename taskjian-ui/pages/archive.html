@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>归档视图</title>
+    <style id="theme-vars">
+/* TaskJian Design Tokens */
+
+:root {
+  /* Base scale */
+  --taskjian-bg: #f8f9fb;
+  --taskjian-surface: #ffffff;
+  --taskjian-surface-2: #f1f3f5;
+  --taskjian-surface-3: #e5e7eb;
+
+  --taskjian-ink: #1f2937;
+  --taskjian-ink-2: #6b7280;
+  --taskjian-ink-3: #9ca3af;
+
+  --taskjian-line: #e5e7eb;
+  --taskjian-line-strong: #d1d5db;
+
+  /* Brand primary: indigo */
+  --taskjian-primary: #4f46e5;
+  --taskjian-primary-600: #4338ca;
+  --taskjian-primary-50: #eef2ff;
+  --taskjian-primary-foreground: #ffffff;
+
+  /* Semantic aliases for head contract */
+  --taskjian-background: var(--taskjian-bg);
+  --taskjian-foreground: var(--taskjian-ink);
+  --taskjian-card: var(--taskjian-surface);
+  --taskjian-card-foreground: var(--taskjian-ink);
+  --taskjian-popover: var(--taskjian-surface);
+  --taskjian-popover-foreground: var(--taskjian-ink);
+  --taskjian-muted: var(--taskjian-surface-2);
+  --taskjian-muted-foreground: var(--taskjian-ink-2);
+  --taskjian-border: var(--taskjian-line);
+  --taskjian-input: var(--taskjian-line);
+  --taskjian-ring: var(--taskjian-primary);
+
+  /* Radius */
+  --taskjian-radius-small: 4px;
+  --taskjian-radius-medium: 8px;
+  --taskjian-radius-large: 12px;
+
+  /* State colors */
+  --taskjian-state-success: #30a46c;
+  --taskjian-state-warning: #f59e0b;
+  --taskjian-state-error: #ef4444;
+  --taskjian-state-info: #3b82f6;
+
+  /* Status-specific */
+  --taskjian-status-todo: #6b7280;
+  --taskjian-status-progress: #3b82f6;
+  --taskjian-status-blocked: #f59e0b;
+  --taskjian-status-done: #30a46c;
+
+  /* Shadows */
+  --taskjian-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 1px rgba(15, 23, 42, 0.03);
+  --taskjian-shadow-2: 0 8px 24px -8px rgba(15, 23, 42, 0.18);
+  --taskjian-shadow-3: 0 24px 60px -20px rgba(15, 23, 42, 0.30);
+
+  /* Typography */
+  --taskjian-font-sans: Inter, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --taskjian-font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", monospace;
+}
+
+/* Dark mode (optional baseline) */
+html.dark {
+  --taskjian-bg: #0b0b0f;
+  --taskjian-surface: #14141a;
+  --taskjian-surface-2: #1c1c24;
+  --taskjian-surface-3: #272730;
+  --taskjian-ink: #f3f4f6;
+  --taskjian-ink-2: #a1a1aa;
+  --taskjian-ink-3: #71717a;
+  --taskjian-line: #272730;
+  --taskjian-line-strong: #3f3f4a;
+  --taskjian-primary: #6366f1;
+  --taskjian-primary-600: #818cf8;
+  --taskjian-primary-50: #1e1b4b;
+  --taskjian-primary-foreground: #ffffff;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--taskjian-background);
+    --color-foreground: var(--taskjian-foreground);
+    --color-card: var(--taskjian-card);
+    --color-card-foreground: var(--taskjian-card-foreground);
+    --color-popover: var(--taskjian-popover);
+    --color-popover-foreground: var(--taskjian-popover-foreground);
+    --color-primary: var(--taskjian-primary);
+    --color-primary-foreground: var(--taskjian-primary-foreground);
+    --color-muted: var(--taskjian-muted);
+    --color-muted-foreground: var(--taskjian-muted-foreground);
+    --color-border: var(--taskjian-border);
+    --color-input: var(--taskjian-input);
+    --color-ring: var(--taskjian-ring);
+    --radius-sm: var(--taskjian-radius-small);
+    --radius-md: var(--taskjian-radius-medium);
+    --radius-lg: var(--taskjian-radius-large);
+  }
+  @layer base {
+    body { background: var(--taskjian-background); color: var(--taskjian-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--taskjian-background); }
+      .text-background { color: var(--taskjian-background); }
+      .border-background { border-color: var(--taskjian-background); }
+      .ring-background { --tw-ring-color: var(--taskjian-background); }
+      .bg-foreground { background-color: var(--taskjian-foreground); }
+      .text-foreground { color: var(--taskjian-foreground); }
+      .border-foreground { border-color: var(--taskjian-foreground); }
+      .ring-foreground { --tw-ring-color: var(--taskjian-foreground); }
+      .bg-card { background-color: var(--taskjian-card); }
+      .text-card { color: var(--taskjian-card); }
+      .border-card { border-color: var(--taskjian-card); }
+      .ring-card { --tw-ring-color: var(--taskjian-card); }
+      .bg-card-foreground { background-color: var(--taskjian-card-foreground); }
+      .text-card-foreground { color: var(--taskjian-card-foreground); }
+      .border-card-foreground { border-color: var(--taskjian-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--taskjian-card-foreground); }
+      .bg-popover { background-color: var(--taskjian-popover); }
+      .text-popover { color: var(--taskjian-popover); }
+      .border-popover { border-color: var(--taskjian-popover); }
+      .ring-popover { --tw-ring-color: var(--taskjian-popover); }
+      .bg-popover-foreground { background-color: var(--taskjian-popover-foreground); }
+      .text-popover-foreground { color: var(--taskjian-popover-foreground); }
+      .border-popover-foreground { border-color: var(--taskjian-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--taskjian-popover-foreground); }
+      .bg-primary { background-color: var(--taskjian-primary); }
+      .text-primary { color: var(--taskjian-primary); }
+      .border-primary { border-color: var(--taskjian-primary); }
+      .ring-primary { --tw-ring-color: var(--taskjian-primary); }
+      .bg-primary-foreground { background-color: var(--taskjian-primary-foreground); }
+      .text-primary-foreground { color: var(--taskjian-primary-foreground); }
+      .border-primary-foreground { border-color: var(--taskjian-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--taskjian-primary-foreground); }
+      .bg-muted { background-color: var(--taskjian-muted); }
+      .text-muted { color: var(--taskjian-muted); }
+      .border-muted { border-color: var(--taskjian-muted); }
+      .ring-muted { --tw-ring-color: var(--taskjian-muted); }
+      .bg-muted-foreground { background-color: var(--taskjian-muted-foreground); }
+      .text-muted-foreground { color: var(--taskjian-muted-foreground); }
+      .border-muted-foreground { border-color: var(--taskjian-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--taskjian-muted-foreground); }
+      .bg-border { background-color: var(--taskjian-border); }
+      .text-border { color: var(--taskjian-border); }
+      .border-border { border-color: var(--taskjian-border); }
+      .ring-border { --tw-ring-color: var(--taskjian-border); }
+      .bg-input { background-color: var(--taskjian-input); }
+      .text-input { color: var(--taskjian-input); }
+      .border-input { border-color: var(--taskjian-input); }
+      .ring-input { --tw-ring-color: var(--taskjian-input); }
+      .bg-ring { background-color: var(--taskjian-ring); }
+      .text-ring { color: var(--taskjian-ring); }
+      .border-ring { border-color: var(--taskjian-ring); }
+      .ring-ring { --tw-ring-color: var(--taskjian-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="h-screen antialiased" style="font-family: var(--taskjian-font-sans); overflow: hidden;">
+  <div id="app" class="h-screen flex flex-col bg-background text-foreground" data-viewport-mode="app-shell">
+    <!-- Title bar -->
+    <header class="h-9 flex items-center justify-between px-3 border-b border-border bg-card shrink-0 select-none" data-dom-id="app-title-bar">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="check-square" class="w-4 h-4 text-primary"></i>
+          <span class="text-sm font-semibold text-foreground tracking-tight">任笺 TaskJian</span>
+        </div>
+        <span class="text-xs text-muted-foreground">|</span>
+        <span class="text-sm font-medium text-foreground">科技部工作</span>
+      </div>
+      <div class="flex items-center">
+        <button type="button" aria-label="最小化" class="flex items-center justify-center w-8 h-9 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+        </button>
+        <button type="button" aria-label="最大化" class="flex items-center justify-center w-8 h-9 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+          <i data-lucide="square" class="w-3 h-3"></i>
+        </button>
+        <button type="button" aria-label="关闭" class="flex items-center justify-center w-8 h-9 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="shell-row flex flex-1 overflow-hidden">
+      <!-- Sidebar -->
+      <aside class="sidebar w-[220px] flex-shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto p-3 gap-3 select-none">
+        <section>
+          <h2 class="px-2 mb-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">任务导航</h2>
+          <nav class="space-y-0.5">
+            <button type="button" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-muted-foreground"></i>
+              <span class="flex-1 text-left">分布式核心</span>
+              <span class="text-xs text-muted-foreground tabular-nums">7</span>
+            </button>
+            <button type="button" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-medium text-foreground bg-muted transition-colors">
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-muted-foreground"></i>
+              <span class="flex-1 text-left">国库支付</span>
+              <span class="text-xs text-muted-foreground tabular-nums">6</span>
+            </button>
+            <button type="button" class="w-full flex items-center gap-2 pl-8 pr-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <span class="text-left">国库支付 - 中间业务</span>
+            </button>
+            <button type="button" class="w-full flex items-center gap-2 pl-8 pr-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <span class="text-left">信创版本测试</span>
+            </button>
+            <button type="button" class="w-full flex items-center gap-2 pl-8 pr-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <span class="text-left">开始上云整理流程</span>
+            </button>
+            <button type="button" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-muted-foreground"></i>
+              <span class="flex-1 text-left">国库单位资金</span>
+              <span class="text-xs text-muted-foreground tabular-nums">3</span>
+            </button>
+          </nav>
+        </section>
+
+        <hr class="border-border">
+
+        <section>
+          <div class="flex items-center justify-between px-2 mb-1.5">
+            <h2 class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">工作区</h2>
+            <button data-dom-id="btn-workspace-add" type="button" aria-label="添加工作区" class="flex items-center justify-center w-5 h-5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <nav class="space-y-0.5">
+            <button data-dom-id="nav-workspace-keji" type="button" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <span class="w-1.5 h-1.5 rounded-full bg-muted-foreground"></span>
+              <span class="flex-1 text-left">科技部工作</span>
+            </button>
+            <button data-dom-id="nav-workspace-caiwu" type="button" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <span class="w-1.5 h-1.5 rounded-full bg-muted-foreground"></span>
+              <span class="flex-1 text-left">财务部工作</span>
+            </button>
+            <button data-dom-id="nav-workspace-personal" type="button" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <span class="w-1.5 h-1.5 rounded-full bg-muted-foreground"></span>
+              <span class="flex-1 text-left">个人事务</span>
+            </button>
+          </nav>
+        </section>
+
+        <hr class="border-border">
+
+        <button data-dom-id="nav-archive" type="button" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-medium bg-primary/10 text-primary transition-colors">
+          <i data-lucide="archive" class="w-4 h-4 text-primary"></i>
+          <span class="flex-1 text-left">归档</span>
+        </button>
+      </aside>
+
+      <!-- Main content -->
+      <main class="content flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
+        <!-- Archive header -->
+        <div class="flex items-center justify-between px-4 py-2 border-b border-border bg-card/50 shrink-0">
+          <div class="flex items-center gap-2">
+            <i data-lucide="archive" class="w-4 h-4 text-muted-foreground"></i>
+            <h1 class="text-base font-semibold text-foreground tracking-tight">归档</h1>
+          </div>
+          <span class="text-xs text-muted-foreground">归档区只读，不能编辑</span>
+        </div>
+
+        <!-- Archived task list -->
+        <div id="main-content-body" class="content-scroll flex-1 overflow-y-auto p-4 space-y-2" data-scroll-region="primary">
+          <!-- Archived task 1 -->
+          <div class="flex items-center gap-3 px-3 py-2 rounded-md border border-border bg-card/50 text-muted-foreground">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-muted-foreground"></i>
+            <span class="text-xs text-muted-foreground shrink-0" style="font-family: var(--taskjian-font-mono);">001</span>
+            <span class="text-sm text-muted-foreground line-through flex-1 break-words">国库支付 - 中间业务</span>
+            <span class="text-[11px] text-muted-foreground whitespace-nowrap">2025-12-10</span>
+          </div>
+
+          <!-- Archived task 2 -->
+          <div class="flex items-center gap-3 px-3 py-2 rounded-md border border-border bg-card/50 text-muted-foreground">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-muted-foreground"></i>
+            <span class="text-xs text-muted-foreground shrink-0" style="font-family: var(--taskjian-font-mono);">002</span>
+            <span class="text-sm text-muted-foreground line-through flex-1 break-words">信创版本测试（联系南天厂商）</span>
+            <span class="text-[11px] text-muted-foreground whitespace-nowrap">2025-11-28</span>
+          </div>
+
+          <!-- Archived task 3 -->
+          <div class="flex items-center gap-3 px-3 py-2 rounded-md border border-border bg-card/50 text-muted-foreground">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-muted-foreground"></i>
+            <span class="text-xs text-muted-foreground shrink-0" style="font-family: var(--taskjian-font-mono);">003</span>
+            <span class="text-sm text-muted-foreground line-through flex-1 break-words">开始上云整理流程</span>
+            <span class="text-[11px] text-muted-foreground whitespace-nowrap">2025-11-15</span>
+          </div>
+
+          <!-- Archived task 4 -->
+          <div class="flex items-center gap-3 px-3 py-2 rounded-md border border-border bg-card/50 text-muted-foreground">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-muted-foreground"></i>
+            <span class="text-xs text-muted-foreground shrink-0" style="font-family: var(--taskjian-font-mono);">004</span>
+            <span class="text-sm text-muted-foreground line-through flex-1 break-words">分布式核心交易日志清理</span>
+            <span class="text-[11px] text-muted-foreground whitespace-nowrap">2025-10-30</span>
+          </div>
+
+          <!-- Archived task 5 -->
+          <div class="flex items-center gap-3 px-3 py-2 rounded-md border border-border bg-card/50 text-muted-foreground">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-muted-foreground"></i>
+            <span class="text-xs text-muted-foreground shrink-0" style="font-family: var(--taskjian-font-mono);">005</span>
+            <span class="text-sm text-muted-foreground line-through flex-1 break-words">国库单位资金归集方案确认</span>
+            <span class="text-[11px] text-muted-foreground whitespace-nowrap">2025-10-12</span>
+          </div>
+        </div>
+
+        <!-- Status bar -->
+        <footer class="status-bar h-8 flex items-center justify-between px-3 border-t border-border bg-card shrink-0 text-xs text-muted-foreground">
+          <span class="tabular-nums">共归档 5 项</span>
+          <span>只读视图</span>
+          <span>v1.0.0</span>
+        </footer>
+      </main>
+    </div>
+  </div>
+  <style id="critical-layout">
+    #app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    #app > header { flex: 0 0 auto; }
+    .shell-row { flex: 1 1 auto; display: flex; min-height: 0; overflow: hidden; }
+    .sidebar { width: 220px; flex: 0 0 auto; overflow-y: auto; }
+    .content { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+    .content-scroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+    .status-bar { flex: 0 0 auto; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

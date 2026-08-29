@@ -1,0 +1,293 @@
+{
+  "data": [
+    {
+      "id": "page-main",
+      "title": "主界面",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787977000000,
+      "canvasData": {
+        "x": 480,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-56e34109",
+          "measuredAt": 1787979544464
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/main.html",
+        "interactions": [
+          {
+            "domId": "btn-tag-filter",
+            "targetPageId": "page-tag-filter",
+            "transitionLabel": "打开标签过滤"
+          },
+          {
+            "domId": "btn-status-filter",
+            "targetPageId": "page-status-filter",
+            "transitionLabel": "打开状态过滤"
+          },
+          {
+            "domId": "btn-archive",
+            "targetPageId": "page-archive",
+            "transitionLabel": "进入归档"
+          },
+          {
+            "domId": "btn-task-add",
+            "targetPageId": "page-task-edit",
+            "transitionLabel": "新建任务"
+          },
+          {
+            "domId": "btn-tag-management",
+            "targetPageId": "page-tag-management",
+            "transitionLabel": "打开标签管理"
+          }
+        ],
+        "stateRole": "base",
+        "stateGroupId": "sg-main-app"
+      }
+    },
+    {
+      "id": "page-tag-filter",
+      "title": "标签过滤浮层",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787977000001,
+      "canvasData": {
+        "x": 960,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-6dadff9c",
+          "measuredAt": 1787979544464
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/tag-filter.html",
+        "interactions": [
+          {
+            "domId": "popover-tag-filter-backdrop",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "关闭浮层"
+          },
+          {
+            "domId": "btn-manage-tags",
+            "targetPageId": "page-tag-management",
+            "transitionLabel": "打开标签管理"
+          }
+        ],
+        "stateRole": "derived",
+        "stateGroupId": "sg-main-app",
+        "baseStatePageId": "page-main"
+      }
+    },
+    {
+      "id": "page-status-filter",
+      "title": "状态过滤浮层",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787977000002,
+      "canvasData": {
+        "x": 960,
+        "y": 373,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-4970f2df",
+          "measuredAt": 1787979544464
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/status-filter.html",
+        "interactions": [
+          {
+            "domId": "popover-status-filter-backdrop",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "关闭浮层"
+          }
+        ],
+        "stateRole": "derived",
+        "stateGroupId": "sg-main-app",
+        "baseStatePageId": "page-main"
+      }
+    },
+    {
+      "id": "page-tag-management",
+      "title": "标签管理弹窗",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787977000003,
+      "canvasData": {
+        "x": 1440,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-515a3984",
+          "measuredAt": 1787979544464
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/tag-management.html",
+        "interactions": [
+          {
+            "domId": "modal-tag-management-backdrop",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "关闭弹窗"
+          },
+          {
+            "domId": "btn-cancel-tags",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "取消"
+          },
+          {
+            "domId": "btn-save-tags",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "保存"
+          },
+          {
+            "domId": "btn-close-modal",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "关闭"
+          }
+        ],
+        "stateRole": "derived",
+        "stateGroupId": "sg-main-app",
+        "baseStatePageId": "page-main"
+      }
+    },
+    {
+      "id": "page-archive",
+      "title": "归档视图",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787977000004,
+      "canvasData": {
+        "x": 960,
+        "y": 746,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-65edc6c8",
+          "measuredAt": 1787979544464
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/archive.html",
+        "interactions": [
+          {
+            "domId": "nav-workspace-keji",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "切换工作区"
+          }
+        ],
+        "stateRole": "derived",
+        "stateGroupId": "sg-main-app",
+        "baseStatePageId": "page-main"
+      }
+    },
+    {
+      "id": "page-empty-state",
+      "title": "空状态",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787977000005,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-a6151c38",
+          "measuredAt": 1787979544464
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/empty-state.html",
+        "interactions": [
+          {
+            "domId": "btn-create-first-workspace",
+            "targetPageId": "page-main",
+            "transitionLabel": "创建默认工作区"
+          }
+        ],
+        "stateRole": "derived",
+        "stateGroupId": "sg-main-app",
+        "baseStatePageId": "page-main"
+      }
+    },
+    {
+      "id": "page-task-edit",
+      "title": "任务编辑弹窗",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787977000006,
+      "canvasData": {
+        "x": 960,
+        "y": 1119,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-f6b5151d",
+          "measuredAt": 1787979544464
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/task-edit.html",
+        "interactions": [
+          {
+            "domId": "modal-task-edit-backdrop",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "关闭弹窗"
+          },
+          {
+            "domId": "btn-cancel-task",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "取消"
+          },
+          {
+            "domId": "btn-save-task",
+            "targetPageId": "page-main",
+            "hideEdge": true,
+            "transitionLabel": "保存"
+          }
+        ],
+        "stateRole": "derived",
+        "stateGroupId": "sg-main-app",
+        "baseStatePageId": "page-main"
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "desktop",
+    "projectName": "任笺 TaskJian 交互原型",
+    "designLibrary": null
+  }
+}
