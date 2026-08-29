@@ -16,6 +16,12 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
+/** 任务区域分组分块 */
+export interface GroupSection {
+  group: WorkspaceGroup | null;
+  roots: TreeNode[];
+}
+
 const DEFAULT_FILTER: FilterState = {
   groupId: null,
   tagNames: [],
@@ -46,8 +52,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     for (const t of Object.values(file.tasks)) {
       nodes[t.id] = { task: t, children: [] };
     }
-    // 按 tasks Record 的插入顺序（即解析文档顺序）挂载子节点
-    for (const t of Object.values(file.tasks)) {
+    // 按 order 排序挂载子节点
+    const sortedTasks = Object.values(file.tasks).sort(
+      (a, b) => (a.order ?? 0) - (b.order ?? 0),
+    );
+    for (const t of sortedTasks) {
       if (t.parentId && nodes[t.parentId] && nodes[t.id]) {
         nodes[t.parentId].children.push(nodes[t.id]);
       }
@@ -69,7 +78,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     for (const t of tasks) {
       nodes[t.id] = { task: t, children: [] };
     }
-    for (const t of tasks) {
+    for (const t of [...tasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))) {
       if (t.parentId && nodes[t.parentId] && nodes[t.id]) {
         nodes[t.parentId].children.push(nodes[t.id]);
       }
@@ -112,8 +121,49 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     return result;
   });
 
-  // 当前工作区分组列表
-  const activeGroups = computed<WorkspaceGroup[]>(() => activeFile.value?.workspace.groups ?? []);
+  // 当前工作区分组列表（按 order 排序）
+  const activeGroups = computed<WorkspaceGroup[]>(() => {
+    const groups = activeFile.value?.workspace.groups ?? [];
+    return [...groups].sort((a, b) => a.order - b.order);
+  });
+
+  // groupId → name 快速查找
+  const groupMap = computed<Map<string, WorkspaceGroup>>(() => {
+    const m = new Map<string, WorkspaceGroup>();
+    for (const g of activeGroups.value) m.set(g.id, g);
+    return m;
+  });
+
+  // 按分组组织过滤后的根任务（用于在任务区域分段渲染）。
+  // 输出形如 [{ group: WorkspaceGroup | null, roots: TreeNode[] }, ...]
+  // 规则：
+  //   - 只在根任务（parentId === null 的节点）上读 groupId；子任务跟随父节点所在分组。
+  //   - 分组按 group.order 排序；未分组（groupId 为 null）放到最后一段，group 为 null。
+  //   - 过滤命中了 groupId（侧边栏分组筛选）时，仍按相同分段规则，但非命中分组的 roots 为空。
+  const groupedFilteredSections = computed<GroupSection[]>(() => {
+    const byGroup = new Map<string | null, TreeNode[]>();
+    for (const root of filteredTree.value) {
+      const gid = root.task.groupId ?? null;
+      if (!byGroup.has(gid)) byGroup.set(gid, []);
+      byGroup.get(gid)!.push(root);
+    }
+    const sections: GroupSection[] = [];
+    // 1) 有分组的段（按 group.order）
+    for (const g of activeGroups.value) {
+      sections.push({ group: g, roots: byGroup.get(g.id) ?? [] });
+    }
+    // 2) 未分组段（若存在任务）
+    const ungrouped = byGroup.get(null) ?? [];
+    if (ungrouped.length > 0) {
+      sections.push({ group: null, roots: ungrouped });
+    }
+    // 过滤掉空段（但若全为空，则保留一个以让 TaskTree 显示"暂无任务"）
+    const nonEmpty = sections.filter((s) => s.roots.length > 0);
+    if (nonEmpty.length > 0) return nonEmpty;
+    // 如果没任务，但存在分组定义，保留分组空段（让空态更自然），否则返回空数组。
+    if (activeGroups.value.length === 0 && ungrouped.length === 0) return [];
+    return sections.filter((s) => s.group === null || activeGroups.value.some((g) => g.id === s.group?.id));
+  });
 
   async function loadAll() {
     if (typeof window.api === 'undefined') return;
@@ -221,6 +271,88 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     activeFile.value.rootOrder = activeFile.value.rootOrder.filter((x) => x !== id);
   }
 
+  async function reorderTask(
+    id: string,
+    targetParentId: string | null,
+    targetIndex: number,
+  ) {
+    if (typeof window.api === 'undefined') return;
+    const wsId = activeWorkspaceId.value;
+    if (!wsId || !activeFile.value) return;
+    const res = await window.api.task.reorder(wsId, id, targetParentId, targetIndex);
+    if (res.code !== 0 || !res.data) return;
+    const task = activeFile.value.tasks[id];
+    if (!task) return;
+    // 更新 parentId 与 order
+    const oldParentId = task.parentId;
+    task.parentId = targetParentId;
+    // 若从根级移出，从 rootOrder 移除
+    if (oldParentId === null && targetParentId !== null) {
+      activeFile.value.rootOrder = activeFile.value.rootOrder.filter((x) => x !== id);
+    }
+    // 若移入根级，加入 rootOrder
+    if (targetParentId === null && oldParentId !== null) {
+      const clamped = Math.max(0, Math.min(targetIndex, activeFile.value.rootOrder.length));
+      activeFile.value.rootOrder.splice(clamped, 0, id);
+    }
+    // 若根级内部重排
+    if (targetParentId === null && oldParentId === null) {
+      activeFile.value.rootOrder = activeFile.value.rootOrder.filter((x) => x !== id);
+      const clamped = Math.max(0, Math.min(targetIndex, activeFile.value.rootOrder.length));
+      activeFile.value.rootOrder.splice(clamped, 0, id);
+    }
+    // 重算同级 order（前端镜像后端逻辑）
+    const siblings = Object.values(activeFile.value.tasks)
+      .filter((t) => t.id !== id && (t.parentId ?? null) === targetParentId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const clampedIdx = Math.max(0, Math.min(targetIndex, siblings.length));
+    siblings.splice(clampedIdx, 0, task);
+    siblings.forEach((t, i) => {
+      t.order = i;
+    });
+  }
+
+  // —— 分组 CRUD ——
+  async function createGroup(name: string) {
+    if (typeof window.api === 'undefined') return;
+    const wsId = activeWorkspaceId.value;
+    if (!wsId || !activeFile.value) return;
+    const res = await window.api.group.create(wsId, name);
+    if (res.code !== 0 || !res.data) return;
+    activeFile.value.workspace.groups.push(res.data);
+    return res.data;
+  }
+
+  async function updateGroup(groupId: string, patch: Partial<WorkspaceGroup>) {
+    if (typeof window.api === 'undefined') return;
+    const wsId = activeWorkspaceId.value;
+    if (!wsId || !activeFile.value) return;
+    const res = await window.api.group.update(wsId, groupId, patch);
+    if (res.code !== 0 || !res.data) return;
+    const idx = activeFile.value.workspace.groups.findIndex((g) => g.id === groupId);
+    if (idx >= 0) activeFile.value.workspace.groups[idx] = res.data;
+    return res.data;
+  }
+
+  async function deleteGroup(groupId: string) {
+    if (typeof window.api === 'undefined') return;
+    const wsId = activeWorkspaceId.value;
+    if (!wsId || !activeFile.value) return;
+    const res = await window.api.group.delete(wsId, groupId);
+    if (res.code !== 0) return;
+    activeFile.value.workspace.groups = activeFile.value.workspace.groups.filter(
+      (g) => g.id !== groupId,
+    );
+    // 被删分组下的任务 groupId 置空
+    for (const task of Object.values(activeFile.value.tasks)) {
+      if (task.groupId === groupId) task.groupId = null;
+    }
+    // 过滤条件中如果引用了被删分组，清除
+    if (filter.value.groupId === groupId) {
+      filter.value.groupId = null;
+    }
+  }
+
   function setFilter(patch: Partial<FilterState>) {
     filter.value = { ...filter.value, ...patch };
   }
@@ -255,6 +387,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     hasActiveFilter,
     summary,
     activeGroups,
+    groupMap,
+    groupedFilteredSections,
     loadAll,
     loadActive,
     setActive,
@@ -265,6 +399,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     updateTask,
     deleteTask,
     archiveTask,
+    reorderTask,
+    createGroup,
+    updateGroup,
+    deleteGroup,
     setFilter,
     toggleTagFilter,
     toggleStatusFilter,

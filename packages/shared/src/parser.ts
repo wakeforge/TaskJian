@@ -160,6 +160,7 @@ export function parseTaskText(text: string, tagNames: string[]): ParseResult {
           code,
           note: undefined,
           groupId: currentGroupId,
+          order: tasks.length,
           createdAt: now,
           updatedAt: now,
         };
@@ -186,6 +187,7 @@ export function parseTaskText(text: string, tagNames: string[]): ParseResult {
         prefix,
         note: undefined,
         groupId: parentEntry ? undefined : currentGroupId,
+        order: tasks.length,
         createdAt: now,
         updatedAt: now,
       };

@@ -21,6 +21,7 @@ export interface TaskNode {
   prefix?: string;
   note?: string;
   groupId?: string | null;
+  order: number;
   createdAt: number;
   updatedAt: number;
   archivedAt?: number;

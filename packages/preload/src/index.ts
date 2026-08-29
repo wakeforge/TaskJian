@@ -10,6 +10,7 @@ import type {
   TaskNode,
   Workspace,
   WorkspaceFile,
+  WorkspaceGroup,
 } from '@taskjian/shared';
 
 const api = {
@@ -47,6 +48,13 @@ const api = {
       ipcRenderer.invoke('task:move', workspaceId, id, newParentId),
     archive: (workspaceId: string, id: string): Promise<IpcResult<void>> =>
       ipcRenderer.invoke('task:archive', workspaceId, id),
+    reorder: (
+      workspaceId: string,
+      id: string,
+      targetParentId: string | null,
+      targetIndex: number,
+    ): Promise<IpcResult<TaskNode>> =>
+      ipcRenderer.invoke('task:reorder', workspaceId, id, targetParentId, targetIndex),
     parseText: (text: string, tagNames: string[]): Promise<IpcResult<ParseResult>> =>
       ipcRenderer.invoke('task:parseText', text, tagNames),
   },
@@ -54,6 +62,18 @@ const api = {
     list: (): Promise<IpcResult<TagDef[]>> => ipcRenderer.invoke('tag:list'),
     saveAll: (tags: TagDef[]): Promise<IpcResult<TagDef[]>> =>
       ipcRenderer.invoke('tag:saveAll', tags),
+  },
+  group: {
+    create: (workspaceId: string, name: string): Promise<IpcResult<WorkspaceGroup>> =>
+      ipcRenderer.invoke('group:create', workspaceId, name),
+    update: (
+      workspaceId: string,
+      groupId: string,
+      patch: Partial<WorkspaceGroup>,
+    ): Promise<IpcResult<WorkspaceGroup>> =>
+      ipcRenderer.invoke('group:update', workspaceId, groupId, patch),
+    delete: (workspaceId: string, groupId: string): Promise<IpcResult<void>> =>
+      ipcRenderer.invoke('group:delete', workspaceId, groupId),
   },
   archive: {
     list: (): Promise<IpcResult<TaskNode[]>> => ipcRenderer.invoke('archive:list'),
@@ -95,4 +115,5 @@ export type {
   TaskNode,
   Workspace,
   WorkspaceFile,
+  WorkspaceGroup,
 };

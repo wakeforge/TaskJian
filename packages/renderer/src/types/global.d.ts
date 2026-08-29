@@ -7,6 +7,7 @@ import type {
   TaskNode,
   Workspace,
   WorkspaceFile,
+  WorkspaceGroup,
 } from '@taskjian/shared';
 
 export interface TaskJianApi {
@@ -30,11 +31,26 @@ export interface TaskJianApi {
     delete(workspaceId: string, id: string): Promise<IpcResult<void>>;
     move(workspaceId: string, id: string, newParentId: string | null): Promise<IpcResult<TaskNode>>;
     archive(workspaceId: string, id: string): Promise<IpcResult<void>>;
+    reorder(
+      workspaceId: string,
+      id: string,
+      targetParentId: string | null,
+      targetIndex: number,
+    ): Promise<IpcResult<TaskNode>>;
     parseText(text: string, tagNames: string[]): Promise<IpcResult<ParseResult>>;
   };
   tag: {
     list(): Promise<IpcResult<TagDef[]>>;
     saveAll(tags: TagDef[]): Promise<IpcResult<TagDef[]>>;
+  };
+  group: {
+    create(workspaceId: string, name: string): Promise<IpcResult<WorkspaceGroup>>;
+    update(
+      workspaceId: string,
+      groupId: string,
+      patch: Partial<WorkspaceGroup>,
+    ): Promise<IpcResult<WorkspaceGroup>>;
+    delete(workspaceId: string, groupId: string): Promise<IpcResult<void>>;
   };
   archive: {
     list(): Promise<IpcResult<TaskNode[]>>;

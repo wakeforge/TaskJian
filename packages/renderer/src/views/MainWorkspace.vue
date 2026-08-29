@@ -14,21 +14,17 @@ import StatusFilterPopover from '../components/StatusFilterPopover.vue';
 
 const workspaceStore = useWorkspaceStore();
 
-// 当前分组标题（过滤 groupId 命中时显示，对齐设计稿 <h1>【分组名】</h1>）
-const currentGroupTitle = computed(() => {
-  const gid = workspaceStore.filter.groupId;
-  if (!gid) return '';
-  const g = workspaceStore.activeGroups.find((x) => x.id === gid);
-  return g ? `【${g.name}】` : '';
-});
+const sections = computed(() => workspaceStore.groupedFilteredSections);
 
 // 空状态类型：
 // - 无工作区 → no-workspace（引导新建）
 // - 有过滤条件但无结果 → no-result（提供清除过滤）
-// - 工作区本就空（无过滤）→ 交给 TaskTree 内联 "暂无任务" 提示，不重复 EmptyState
+// - 工作区本就空（无过滤且 sections 为空）→ 交给 TaskTree 内联提示，不重复 EmptyState
 const emptyStateType = computed<'no-workspace' | 'no-result' | null>(() => {
   if (!workspaceStore.activeFile) return 'no-workspace';
-  if (workspaceStore.filteredTree.length === 0 && workspaceStore.hasActiveFilter) {
+  // 任何一段存在可渲染的 roots，就不算空
+  const hasAnyTask = sections.value.some((s) => s.roots.length > 0);
+  if (!hasAnyTask && workspaceStore.hasActiveFilter) {
     return 'no-result';
   }
   return null;
@@ -50,16 +46,29 @@ function clearFilters() {
       <Sidebar />
       <main class="content flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
         <FilterBar />
-        <div class="content-scroll flex-1 overflow-y-auto p-4 space-y-4">
-          <!-- 当前分组标题 -->
-          <h1
-            v-if="currentGroupTitle"
-            class="text-lg font-semibold text-foreground tracking-tight"
-          >
-            {{ currentGroupTitle }}
-          </h1>
-          <!-- 任务树 -->
-          <TaskTree v-if="!emptyStateType" :tasks="workspaceStore.filteredTree" />
+        <div class="content-scroll flex-1 overflow-y-auto p-4 space-y-6">
+          <!-- 按分块渲染任务区 -->
+          <template v-if="!emptyStateType && sections.length > 0">
+            <section v-for="sec in sections" :key="sec.group?.id ?? '__ungrouped__'">
+              <!-- 组标题：大字标题 + 底部分隔线；未分组段同样样式但弱化 -->
+              <h2
+                class="flex items-baseline gap-2 pb-2 mb-2 border-b border-border"
+                :class="sec.group ? 'text-xl font-semibold text-foreground' : 'text-sm font-medium text-muted-foreground'"
+              >
+                <span>{{ sec.group ? sec.group.name : '未分组' }}</span>
+                <span
+                  v-if="sec.roots.length > 0"
+                  class="text-xs font-normal tabular-nums"
+                  :class="sec.group ? 'text-muted-foreground' : 'text-muted-foreground/70'"
+                >
+                  {{ sec.roots.length }} 项
+                </span>
+              </h2>
+              <TaskTree :tasks="sec.roots" />
+            </section>
+          </template>
+          <!-- 无分段（无分组 + 无未分组任务）：直接交给 TaskTree 渲染空态 -->
+          <TaskTree v-else-if="!emptyStateType" :tasks="workspaceStore.filteredTree" />
           <!-- 空状态 -->
           <EmptyState
             v-else-if="emptyStateType === 'no-result'"

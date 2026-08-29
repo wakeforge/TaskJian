@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { ChevronRight, ChevronDown, Plus, Archive } from 'lucide-vue-next';
+import { Plus, Archive } from 'lucide-vue-next';
 import { useAppStore } from '../stores/app';
 import { useWorkspaceStore, type TreeNode } from '../stores/workspace';
 import { useUiStore } from '../stores/ui';
@@ -77,31 +77,42 @@ const groupCounts = computed(() => {
   return m;
 });
 
-// —— 分组折叠状态（本地，首版不持久化） ——
-const expanded = ref<Set<string>>(new Set());
-function isExpanded(groupId: string): boolean {
-  return expanded.value.has(groupId) || workspaceStore.filter.groupId === groupId;
-}
-function toggleExpand(groupId: string) {
-  const next = new Set(expanded.value);
-  if (next.has(groupId)) next.delete(groupId);
-  else next.add(groupId);
-  expanded.value = next;
-}
+// 点击分组 → 设置过滤器，再次点击同组 → 取消过滤
 function onGroupClick(groupId: string) {
   if (workspaceStore.filter.groupId !== groupId) {
     workspaceStore.setFilter({ groupId });
-    if (!expanded.value.has(groupId)) {
-      const next = new Set(expanded.value);
-      next.add(groupId);
-      expanded.value = next;
-    }
   } else {
-    toggleExpand(groupId);
+    workspaceStore.setFilter({ groupId: null });
   }
 }
-function groupTasks(groupId: string): TreeNode[] {
-  return workspaceStore.taskTree.filter((n) => n.task.groupId === groupId);
+
+// —— 分组右键菜单：重命名 / 删除 ——
+const groupCtxMenu = ref<{ x: number; y: number; groupId: string } | null>(null);
+function onGroupContext(e: MouseEvent, groupId: string) {
+  e.preventDefault();
+  groupCtxMenu.value = { x: e.clientX, y: e.clientY, groupId };
+}
+function closeGroupCtxMenu() {
+  groupCtxMenu.value = null;
+}
+async function onRenameGroup() {
+  const id = groupCtxMenu.value?.groupId;
+  closeGroupCtxMenu();
+  if (!id) return;
+  const g = workspaceStore.groupMap.get(id);
+  const name = window.prompt('重命名分组', g?.name ?? '');
+  if (name && name.trim()) await workspaceStore.updateGroup(id, { name: name.trim() });
+}
+function onDeleteGroup() {
+  const id = groupCtxMenu.value?.groupId;
+  closeGroupCtxMenu();
+  if (!id) return;
+  const g = workspaceStore.groupMap.get(id);
+  uiStore.openConfirm(
+    '删除分组',
+    `确定删除分组「${g?.name ?? ''}」吗？该分组下的任务将变为未分组，任务本身不会被删除。`,
+    () => workspaceStore.deleteGroup(id),
+  );
 }
 
 // —— 工作区 ——
@@ -140,8 +151,14 @@ function onDeleteWorkspace() {
     workspaceStore.deleteWorkspace(id),
   );
 }
-onMounted(() => window.addEventListener('click', closeCtxMenu));
-onUnmounted(() => window.removeEventListener('click', closeCtxMenu));
+
+// 点击任意处关闭所有右键菜单
+function onGlobalClick() {
+  closeCtxMenu();
+  closeGroupCtxMenu();
+}
+onMounted(() => window.addEventListener('click', onGlobalClick));
+onUnmounted(() => window.removeEventListener('click', onGlobalClick));
 
 // —— 归档：进入归档路由（load 由 ArchiveView onMounted 完成） ——
 async function onArchive() {
@@ -167,35 +184,22 @@ async function onArchive() {
         任务导航
       </h2>
       <nav class="space-y-0.5">
-        <template v-for="g in workspaceStore.activeGroups" :key="g.id">
-          <button
-            type="button"
-            class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors overflow-hidden"
-            :class="
-              workspaceStore.filter.groupId === g.id
-                ? 'font-medium text-foreground bg-muted'
-                : 'text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-            "
-            @click="onGroupClick(g.id)"
-          >
-            <ChevronDown v-if="isExpanded(g.id)" class="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <ChevronRight v-else class="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <span class="flex-1 text-left truncate">{{ g.name }}</span>
-            <span class="text-xs text-muted-foreground tabular-nums shrink-0">{{ groupCounts.get(g.id) ?? 0 }}</span>
-          </button>
-          <!-- 展开后列出该分组下的根任务 -->
-          <template v-if="isExpanded(g.id)">
-            <button
-              v-for="n in groupTasks(g.id)"
-              :key="n.task.id"
-              type="button"
-              class="w-full flex items-center gap-2 pl-8 pr-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors overflow-hidden"
-              @click="uiStore.openTaskEdit(n.task.id)"
-            >
-              <span class="text-left truncate">{{ n.task.title }}</span>
-            </button>
-          </template>
-        </template>
+        <button
+          v-for="g in workspaceStore.activeGroups"
+          :key="g.id"
+          type="button"
+          class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors overflow-hidden"
+          :class="
+            workspaceStore.filter.groupId === g.id
+              ? 'font-medium text-foreground bg-muted'
+              : 'text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          "
+          @click="onGroupClick(g.id)"
+          @contextmenu="onGroupContext($event, g.id)"
+        >
+          <span class="flex-1 text-left truncate">{{ g.name }}</span>
+          <span class="text-xs text-muted-foreground tabular-nums shrink-0">{{ groupCounts.get(g.id) ?? 0 }}</span>
+        </button>
         <p
           v-if="workspaceStore.activeGroups.length === 0"
           class="px-2 py-1.5 text-xs text-muted-foreground"
@@ -283,6 +287,31 @@ async function onArchive() {
           type="button"
           class="block w-full text-left text-sm text-foreground px-3 py-1.5 hover:bg-muted transition-colors"
           @click="onDeleteWorkspace"
+        >
+          删除
+        </button>
+      </div>
+    </Teleport>
+
+    <!-- 分组右键菜单 -->
+    <Teleport to="body">
+      <div
+        v-if="groupCtxMenu"
+        class="fixed z-50 min-w-[120px] bg-popover border border-border rounded-md shadow-2 py-1"
+        :style="{ left: groupCtxMenu.x + 'px', top: groupCtxMenu.y + 'px' }"
+        @click.stop
+      >
+        <button
+          type="button"
+          class="block w-full text-left text-sm text-foreground px-3 py-1.5 hover:bg-muted transition-colors"
+          @click="onRenameGroup"
+        >
+          重命名
+        </button>
+        <button
+          type="button"
+          class="block w-full text-left text-sm text-foreground px-3 py-1.5 hover:bg-muted transition-colors"
+          @click="onDeleteGroup"
         >
           删除
         </button>
