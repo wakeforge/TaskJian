@@ -60,11 +60,17 @@ export interface TaskJianApi {
     minimize(): Promise<void>;
     toggleMaximize(): Promise<void>;
     close(): Promise<void>;
+    /** 用系统默认浏览器打开外部链接 */
+    openExternal(url: string): Promise<void>;
   };
   on(channel: string, cb: (...args: unknown[]) => void): void;
 }
 
 declare global {
+  // vite.config.ts define 注入的常量
+  const __APP_VERSION__: string;
+  const __BUILD_DATE__: string;
+
   interface Window {
     api: TaskJianApi;
   }

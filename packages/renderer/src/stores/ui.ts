@@ -32,6 +32,8 @@ export const useUiStore = defineStore('ui', () => {
   const taskEditOpen = ref(false);
   // 全局配置弹窗
   const settingsOpen = ref(false);
+  // 关于弹窗
+  const aboutOpen = ref(false);
   // null = 新建任务
   const taskEditId = ref<string | null>(null);
   const confirmDialog = ref<ConfirmState>({
@@ -87,6 +89,7 @@ export const useUiStore = defineStore('ui', () => {
     statusFilterOpen,
     tagManagementOpen,
     settingsOpen,
+    aboutOpen,
     taskEditOpen,
     taskEditId,
     confirmDialog,
