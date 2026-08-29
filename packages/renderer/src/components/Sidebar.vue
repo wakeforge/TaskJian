@@ -48,7 +48,7 @@ const asideStyle = computed(() => {
 
 const asideClass = computed(() => {
   const base =
-    'sidebar flex-shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto overflow-x-hidden p-3 gap-3 select-none whitespace-nowrap';
+    'sidebar flex-shrink-0 border-r border-border bg-card flex flex-col overflow-x-hidden p-3 gap-3 select-none whitespace-nowrap';
   if (mode.value === 'drawer') return base;
   if (mode.value === 'rail') return `${base} hover:w-[220px]`;
   return base;
@@ -100,8 +100,9 @@ async function onRenameGroup() {
   closeGroupCtxMenu();
   if (!id) return;
   const g = workspaceStore.groupMap.get(id);
-  const name = window.prompt('重命名分组', g?.name ?? '');
-  if (name && name.trim()) await workspaceStore.updateGroup(id, { name: name.trim() });
+  uiStore.openPrompt('重命名分组', g?.name ?? '', (name) => {
+    workspaceStore.updateGroup(id, { name });
+  });
 }
 function onDeleteGroup() {
   const id = groupCtxMenu.value?.groupId;
@@ -116,9 +117,10 @@ function onDeleteGroup() {
 }
 
 // —— 工作区 ——
-async function onAddWorkspace() {
-  const name = window.prompt('新建工作区名称');
-  if (name && name.trim()) await workspaceStore.createWorkspace(name.trim());
+function onAddWorkspace() {
+  uiStore.openPrompt('新建工作区', '', (name) => {
+    workspaceStore.createWorkspace(name);
+  });
 }
 async function onSelectWorkspace(id: string) {
   await workspaceStore.setActive(id);
@@ -139,13 +141,19 @@ async function onRenameWorkspace() {
   closeCtxMenu();
   if (!id) return;
   const w = workspaceStore.workspaces.find((x) => x.id === id);
-  const name = window.prompt('重命名工作区', w?.name ?? '');
-  if (name && name.trim()) await workspaceStore.renameWorkspace(id, name.trim());
+  uiStore.openPrompt('重命名工作区', w?.name ?? '', (name) => {
+    workspaceStore.renameWorkspace(id, name);
+  });
 }
 function onDeleteWorkspace() {
   const id = ctxMenu.value?.workspaceId;
   closeCtxMenu();
   if (!id) return;
+  // 仅剩一个工作区时不允许删除
+  if (workspaceStore.workspaces.length <= 1) {
+    uiStore.showToast('至少保留一个工作区，无法删除', 'error');
+    return;
+  }
   const w = workspaceStore.workspaces.find((x) => x.id === id);
   uiStore.openConfirm('删除工作区', `确定删除工作区「${w?.name ?? ''}」吗？该操作不可撤销。`, () =>
     workspaceStore.deleteWorkspace(id),
@@ -178,8 +186,8 @@ async function onArchive() {
     />
   </Teleport>
   <aside :class="asideClass" :style="asideStyle" data-dom-id="app-sidebar">
-    <!-- 任务导航 -->
-    <section>
+    <!-- 任务导航（可滚动区域） -->
+    <section class="flex-1 min-h-0 overflow-y-auto">
       <h2 class="px-2 mb-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
         任务导航
       </h2>
@@ -211,8 +219,8 @@ async function onArchive() {
 
     <hr class="border-border" />
 
-    <!-- 工作区 -->
-    <section>
+    <!-- 工作区（固定在左下角） -->
+    <section class="shrink-0">
       <div class="flex items-center justify-between px-2 mb-1.5">
         <h2 class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">工作区</h2>
         <button
@@ -258,10 +266,11 @@ async function onArchive() {
 
     <hr class="border-border" />
 
+    <!-- 归档（固定在左下角） -->
     <button
       type="button"
       data-dom-id="btn-archive"
-      class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors overflow-hidden"
+      class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors overflow-hidden shrink-0"
       @click="onArchive"
     >
       <Archive class="w-4 h-4 text-muted-foreground shrink-0" />
@@ -284,12 +293,14 @@ async function onArchive() {
           重命名
         </button>
         <button
+          v-if="workspaceStore.workspaces.length > 1"
           type="button"
           class="block w-full text-left text-sm text-foreground px-3 py-1.5 hover:bg-muted transition-colors"
           @click="onDeleteWorkspace"
         >
           删除
         </button>
+        <p v-else class="px-3 py-1.5 text-xs text-muted-foreground">仅剩一个工作区，无法删除</p>
       </div>
     </Teleport>
 
