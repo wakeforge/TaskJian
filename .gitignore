@@ -9,3 +9,4 @@ Thumbs.db
 .env.local
 _design_extracted/
 _design_scheme.txt
+/.pnpm-store

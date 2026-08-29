@@ -5,15 +5,17 @@ directories:
   output: release
   buildResources: build
 files:
+  - package.json
   - packages/main/dist/**/*
   - packages/preload/dist/**/*
   - packages/renderer/dist-renderer/**/*
-  - package.json
+  - '!**/.map'
+  - '!node_modules'
+  - deploy/node_modules
 asar: true
 win:
   target:
     - nsis
-    - zip
   icon: build/icon.ico
 nsis:
   oneClick: false
