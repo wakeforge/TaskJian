@@ -308,7 +308,7 @@ onUnmounted(() => {
               <textarea
                 id="input-title"
                 v-model="form.title"
-                rows="5"
+                rows="3"
                 placeholder="输入任务内容..."
                 class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm resize-y focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
               ></textarea>

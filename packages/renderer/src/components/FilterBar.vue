@@ -136,18 +136,18 @@ function clearSearch() {
     </div>
     <button
       type="button"
+      class="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+      @click="clearAll"
+    >
+      清除全部
+    </button>
+    <button
+      type="button"
       data-dom-id="btn-tag-management"
       class="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
       @click="ui.tagManagementOpen = true"
     >
       管理标签
-    </button>
-    <button
-      type="button"
-      class="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-      @click="clearAll"
-    >
-      清除全部
     </button>
     <button
       type="button"
