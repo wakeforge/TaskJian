@@ -2,7 +2,7 @@
   "name": "@taskjian/preload",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "type": "commonjs",
   "main": "./dist/index.js",
   "scripts": {
     "dev": "tsc --watch --sourcemap",

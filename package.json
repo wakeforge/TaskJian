@@ -5,9 +5,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n vite,electron -c blue,magenta \"pnpm --filter @taskjian/renderer dev\" \"pnpm --filter @taskjian/main build && pnpm --filter @taskjian/preload build && wait-on tcp:5173 && electron packages/main/dist/index.js\"",
+    "dev": "concurrently -k -n vite,electron -c blue,magenta \"pnpm --filter @taskjian/renderer dev\" \"pnpm --filter @taskjian/shared build && pnpm --filter @taskjian/main build && pnpm --filter @taskjian/preload build && wait-on tcp:5173 && electron packages/main/dist/index.js\"",
     "dev:renderer": "pnpm --filter @taskjian/renderer dev",
-    "dev:main": "pnpm --filter @taskjian/main build && pnpm --filter @taskjian/preload build && electron packages/main/dist/index.js",
+    "dev:main": "pnpm --filter @taskjian/shared build && pnpm --filter @taskjian/main build && pnpm --filter @taskjian/preload build && electron packages/main/dist/index.js",
     "build": "pnpm -r --filter=!@taskjian/renderer run build && pnpm --filter @taskjian/renderer build",
     "build:main": "pnpm --filter @taskjian/main build",
     "build:preload": "pnpm --filter @taskjian/preload build",
