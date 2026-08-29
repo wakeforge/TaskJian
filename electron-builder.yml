@@ -1,0 +1,31 @@
+appId: com.taskjian.app
+productName: TaskJian
+copyright: Copyright © 2026 TaskJian
+directories:
+  output: release
+  buildResources: build
+files:
+  - packages/main/dist/**/*
+  - packages/preload/dist/**/*
+  - packages/renderer/dist-renderer/**/*
+  - package.json
+asar: true
+win:
+  target:
+    - nsis
+    - zip
+  icon: build/icon.ico
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+mac:
+  target:
+    - dmg
+  icon: build/icon.icns
+  category: public.app-category.productivity
+linux:
+  target:
+    - AppImage
+  icon: build/icon.png
+  category: Office

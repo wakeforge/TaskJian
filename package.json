@@ -1,0 +1,31 @@
+{
+  "name": "taskjian",
+  "version": "1.0.0",
+  "description": "任笺 TaskJian — 轻办公任务便签",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n vite,electron -c blue,magenta \"pnpm --filter @taskjian/renderer dev\" \"pnpm --filter @taskjian/main build && pnpm --filter @taskjian/preload build && wait-on tcp:5173 && electron packages/main/dist/index.js\"",
+    "dev:renderer": "pnpm --filter @taskjian/renderer dev",
+    "dev:main": "pnpm --filter @taskjian/main build && pnpm --filter @taskjian/preload build && electron packages/main/dist/index.js",
+    "build": "pnpm -r --filter=!@taskjian/renderer run build && pnpm --filter @taskjian/renderer build",
+    "build:main": "pnpm --filter @taskjian/main build",
+    "build:preload": "pnpm --filter @taskjian/preload build",
+    "build:renderer": "pnpm --filter @taskjian/renderer build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "release:win": "pnpm build && electron-builder --win --x64",
+    "release:mac": "pnpm build && electron-builder --mac --x64 --arm64",
+    "release:linux": "pnpm build && electron-builder --linux --x64",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "wait-on": "^7.2.0",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.0",
+    "vitest": "^1.6.0",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}
