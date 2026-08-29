@@ -9,6 +9,7 @@ import TaskEditDialog from './components/TaskEditDialog.vue';
 import ConfirmDialog from './components/ConfirmDialog.vue';
 import PromptDialog from './components/PromptDialog.vue';
 import SettingsDialog from './components/SettingsDialog.vue';
+import AboutDialog from './components/AboutDialog.vue';
 import ToastContainer from './components/ToastContainer.vue';
 
 const app = useAppStore();
@@ -44,6 +45,7 @@ onMounted(async () => {
     <ConfirmDialog />
     <PromptDialog />
     <SettingsDialog />
+    <AboutDialog />
     <ToastContainer />
   </div>
 </template>

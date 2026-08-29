@@ -26,6 +26,7 @@ const DEFAULT_FILTER: FilterState = {
   groupId: null,
   tagNames: [],
   statuses: [],
+  searchText: '',
 };
 
 export const useWorkspaceStore = defineStore('workspace', () => {

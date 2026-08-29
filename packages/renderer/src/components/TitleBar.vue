@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CheckSquare, Minus, Square, X, Settings, Menu } from 'lucide-vue-next';
+import { CheckSquare, Minus, Square, X, Settings, Menu, Info } from 'lucide-vue-next';
 import { useAppStore } from '../stores/app';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useUiStore } from '../stores/ui';
@@ -26,6 +26,11 @@ function onClose() {
 // 打开全局配置弹窗（主题选择等功能收纳其中）
 function onOpenSettings() {
   uiStore.settingsOpen = true;
+}
+
+// 打开关于弹窗（版本信息 / 相关链接）
+function onOpenAbout() {
+  uiStore.aboutOpen = true;
 }
 
 // sm 断点显示 Hamburger 触发 Drawer
@@ -66,6 +71,16 @@ const showHamburger = computed(() => app.viewport === 'sm');
         @click="onOpenSettings"
       >
         <Settings class="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="关于"
+        title="关于"
+        data-dom-id="btn-about"
+        class="flex items-center justify-center w-8 h-9 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+        @click="onOpenAbout"
+      >
+        <Info class="w-4 h-4" />
       </button>
       <button
         type="button"

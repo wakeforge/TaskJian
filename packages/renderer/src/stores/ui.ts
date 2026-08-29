@@ -23,6 +23,12 @@ export interface PromptState {
   onSubmit: ((value: string) => void) | null;
 }
 
+/** 新建任务的预填默认值（如「创建子项」时预填父级任务与分组） */
+export interface TaskEditDefaults {
+  parentId?: string;
+  groupId?: string | null;
+}
+
 const TOAST_DURATION = 3000;
 
 export const useUiStore = defineStore('ui', () => {
@@ -32,6 +38,8 @@ export const useUiStore = defineStore('ui', () => {
   const taskEditOpen = ref(false);
   // 全局配置弹窗
   const settingsOpen = ref(false);
+  // 关于弹窗
+  const aboutOpen = ref(false);
   // null = 新建任务
   const taskEditId = ref<string | null>(null);
   const confirmDialog = ref<ConfirmState>({
@@ -48,14 +56,19 @@ export const useUiStore = defineStore('ui', () => {
   });
   const toasts = ref<ToastItem[]>([]);
 
-  function openTaskEdit(id: string | null = null) {
+  // 新建模式下的表单预填值（编辑模式忽略）
+  const taskEditDefaults = ref<TaskEditDefaults>({});
+
+  function openTaskEdit(id: string | null = null, defaults: TaskEditDefaults = {}) {
     taskEditId.value = id;
+    taskEditDefaults.value = id === null ? defaults : {};
     taskEditOpen.value = true;
   }
 
   function closeTaskEdit() {
     taskEditOpen.value = false;
     taskEditId.value = null;
+    taskEditDefaults.value = {};
   }
 
   function showToast(message: string, type: ToastType = 'info') {
@@ -87,8 +100,10 @@ export const useUiStore = defineStore('ui', () => {
     statusFilterOpen,
     tagManagementOpen,
     settingsOpen,
+    aboutOpen,
     taskEditOpen,
     taskEditId,
+    taskEditDefaults,
     confirmDialog,
     promptDialog,
     toasts,

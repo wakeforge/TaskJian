@@ -58,10 +58,6 @@ async function save() {
   close();
 }
 
-function onBackdropClick() {
-  close();
-}
-
 function setNameRef(el: unknown, index: number) {
   if (el instanceof HTMLInputElement) {
     nameInputRefs.value[index] = el;
@@ -74,7 +70,6 @@ function setNameRef(el: unknown, index: number) {
     <div
       v-if="ui.tagManagementOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      @click.self="onBackdropClick"
     >
       <div
         role="dialog"
