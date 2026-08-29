@@ -7,6 +7,8 @@ import { useShortcuts } from './composables/shortcuts';
 import TagManagementDialog from './components/TagManagementDialog.vue';
 import TaskEditDialog from './components/TaskEditDialog.vue';
 import ConfirmDialog from './components/ConfirmDialog.vue';
+import PromptDialog from './components/PromptDialog.vue';
+import SettingsDialog from './components/SettingsDialog.vue';
 import ToastContainer from './components/ToastContainer.vue';
 
 const app = useAppStore();
@@ -40,6 +42,8 @@ onMounted(async () => {
     <TagManagementDialog />
     <TaskEditDialog />
     <ConfirmDialog />
+    <PromptDialog />
+    <SettingsDialog />
     <ToastContainer />
   </div>
 </template>

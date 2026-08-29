@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CheckSquare, Minus, Square, X, Sun, Moon, Monitor, Menu } from 'lucide-vue-next';
+import { CheckSquare, Minus, Square, X, Settings, Menu } from 'lucide-vue-next';
 import { useAppStore } from '../stores/app';
 import { useWorkspaceStore } from '../stores/workspace';
+import { useUiStore } from '../stores/ui';
 
 const app = useAppStore();
 const workspaceStore = useWorkspaceStore();
+const uiStore = useUiStore();
 
 const activeWorkspaceName = computed(() => workspaceStore.activeFile?.workspace.name ?? '');
 
@@ -21,17 +23,10 @@ function onClose() {
   if (typeof window.api !== 'undefined') void window.api.window.close();
 }
 
-// 主题切换图标：light → Sun / dark → Moon / system → Monitor
-const themeIcon = computed(() => {
-  if (app.theme === 'light') return Sun;
-  if (app.theme === 'dark') return Moon;
-  return Monitor;
-});
-const themeLabel = computed(() => {
-  if (app.theme === 'light') return '当前：浅色（点击切到深色）';
-  if (app.theme === 'dark') return '当前：深色（点击切到跟随系统）';
-  return '当前：跟随系统（点击切到浅色）';
-});
+// 打开全局配置弹窗（主题选择等功能收纳其中）
+function onOpenSettings() {
+  uiStore.settingsOpen = true;
+}
 
 // sm 断点显示 Hamburger 触发 Drawer
 const showHamburger = computed(() => app.viewport === 'sm');
@@ -64,12 +59,13 @@ const showHamburger = computed(() => app.viewport === 'sm');
     <div class="flex items-center" style="-webkit-app-region: no-drag">
       <button
         type="button"
-        :aria-label="themeLabel"
-        :title="themeLabel"
+        aria-label="全局配置"
+        title="全局配置"
+        data-dom-id="btn-settings"
         class="flex items-center justify-center w-8 h-9 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-        @click="app.cycleTheme()"
+        @click="onOpenSettings"
       >
-        <component :is="themeIcon" class="w-3.5 h-3.5" />
+        <Settings class="w-4 h-4" />
       </button>
       <button
         type="button"

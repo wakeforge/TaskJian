@@ -16,6 +16,13 @@ export interface ConfirmState {
   onConfirm: (() => void) | null;
 }
 
+export interface PromptState {
+  open: boolean;
+  title: string;
+  defaultValue: string;
+  onSubmit: ((value: string) => void) | null;
+}
+
 const TOAST_DURATION = 3000;
 
 export const useUiStore = defineStore('ui', () => {
@@ -23,6 +30,8 @@ export const useUiStore = defineStore('ui', () => {
   const statusFilterOpen = ref(false);
   const tagManagementOpen = ref(false);
   const taskEditOpen = ref(false);
+  // 全局配置弹窗
+  const settingsOpen = ref(false);
   // null = 新建任务
   const taskEditId = ref<string | null>(null);
   const confirmDialog = ref<ConfirmState>({
@@ -30,6 +39,12 @@ export const useUiStore = defineStore('ui', () => {
     title: '',
     message: '',
     onConfirm: null,
+  });
+  const promptDialog = ref<PromptState>({
+    open: false,
+    title: '',
+    defaultValue: '',
+    onSubmit: null,
   });
   const toasts = ref<ToastItem[]>([]);
 
@@ -59,18 +74,30 @@ export const useUiStore = defineStore('ui', () => {
     confirmDialog.value = { ...confirmDialog.value, open: false };
   }
 
+  function openPrompt(title: string, defaultValue: string, onSubmit: ((value: string) => void) | null) {
+    promptDialog.value = { open: true, title, defaultValue, onSubmit };
+  }
+
+  function closePrompt() {
+    promptDialog.value = { ...promptDialog.value, open: false };
+  }
+
   return {
     tagFilterOpen,
     statusFilterOpen,
     tagManagementOpen,
+    settingsOpen,
     taskEditOpen,
     taskEditId,
     confirmDialog,
+    promptDialog,
     toasts,
     openTaskEdit,
     closeTaskEdit,
     showToast,
     openConfirm,
     closeConfirm,
+    openPrompt,
+    closePrompt,
   };
 });

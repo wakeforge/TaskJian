@@ -52,6 +52,11 @@ export function registerTaskIpc(): void {
         }
         const now = Date.now();
         const id = partial.id ?? ulid();
+        // 计算 order：同级（同 parentId）已有任务的最大 order + 1
+        const siblings = Object.values(file.tasks).filter(
+          (t) => (t.parentId ?? null) === (partial.parentId ?? null),
+        );
+        const maxOrder = siblings.reduce((mx, t) => Math.max(mx, t.order ?? 0), -1);
         const task: TaskNode = {
           id,
           parentId: partial.parentId ?? null,
@@ -62,6 +67,7 @@ export function registerTaskIpc(): void {
           prefix: partial.prefix,
           note: partial.note,
           groupId: partial.groupId ?? null,
+          order: partial.order ?? maxOrder + 1,
           createdAt: partial.createdAt ?? now,
           updatedAt: now,
         };
@@ -180,6 +186,73 @@ export function registerTaskIpc(): void {
         const now = Date.now();
         task.updatedAt = now;
         file.workspace.updatedAt = now;
+        workspaceRepo.save(workspaceId, file);
+        return ok(task);
+      } catch (err) {
+        return fail(err);
+      }
+    },
+  );
+
+  // 拖拽重排：改变任务的 parentId 并指定在目标同级中的插入位置。
+  // targetParentId=null 时操作 rootOrder；否则操作同 parentId 子任务的 order 字段。
+  ipcMain.handle(
+    'task:reorder',
+    async (
+      _e,
+      workspaceId: string,
+      id: string,
+      targetParentId: string | null,
+      targetIndex: number,
+    ) => {
+      try {
+        const file = workspaceRepo.load(workspaceId);
+        if (!file) {
+          throw new Error(`Workspace not found: ${workspaceId}`);
+        }
+        const task = file.tasks[id];
+        if (!task) {
+          throw new Error(`Task not found: ${id}`);
+        }
+        // 防止移入自身子树
+        if (targetParentId !== null) {
+          if (targetParentId === id) {
+            throw new Error('Cannot move task into itself');
+          }
+          const subtree = collectSubtreeIds(file.tasks, id);
+          if (subtree.includes(targetParentId)) {
+            throw new Error('Cannot move task into its own subtree');
+          }
+        }
+
+        const oldParentId = task.parentId;
+        task.parentId = targetParentId;
+        task.updatedAt = Date.now();
+
+        // 1. 从原同级列表移除
+        if (oldParentId === null) {
+          file.rootOrder = file.rootOrder.filter((tid) => tid !== id);
+        }
+
+        // 2. 插入到目标同级列表的指定位置
+        if (targetParentId === null) {
+          // 根级：操作 rootOrder
+          const clamped = Math.max(0, Math.min(targetIndex, file.rootOrder.length));
+          file.rootOrder.splice(clamped, 0, id);
+        } else {
+          // 子级：收集同 parentId 的任务（排除自身），按 order 排序，插入到 targetIndex，重算 order
+          const siblings = Object.values(file.tasks)
+            .filter((t) => t.id !== id && (t.parentId ?? null) === targetParentId)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          const clamped = Math.max(0, Math.min(targetIndex, siblings.length));
+          siblings.splice(clamped, 0, task);
+          // 重算所有同级任务 order
+          siblings.forEach((t, i) => {
+            t.order = i;
+          });
+        }
+
+        file.workspace.updatedAt = task.updatedAt;
         workspaceRepo.save(workspaceId, file);
         return ok(task);
       } catch (err) {

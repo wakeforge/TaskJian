@@ -1,19 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { X, Plus } from 'lucide-vue-next';
+import { X } from 'lucide-vue-next';
 import { useUiStore } from '../stores/ui';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useTagStore } from '../stores/tag';
-import {
-  parseTaskText,
-  serializeTasks,
-  STATUS_LABELS,
-  STATUS_COLORS,
-  STATUS_PREFIX,
-  type TaskNode,
-  type TaskStatus,
-  type ParseResult,
-} from '@taskjian/shared';
+import { STATUS_LABELS, STATUS_COLORS, type TaskNode, type TaskStatus, type WorkspaceGroup } from '@taskjian/shared';
 
 const ui = useUiStore();
 const workspace = useWorkspaceStore();
@@ -24,6 +15,7 @@ interface StructuredForm {
   status: TaskStatus;
   tags: string[];
   code: string;
+  groupId: string | null;
   parentId: string | null;
   note: string;
 }
@@ -33,15 +25,12 @@ const emptyForm = (): StructuredForm => ({
   status: 'todo',
   tags: [],
   code: '',
+  groupId: null,
   parentId: null,
   note: '',
 });
 
-const activeTab = ref<'structured' | 'plain'>('structured');
 const form = ref<StructuredForm>(emptyForm());
-const plainText = ref('');
-
-const tagNames = computed(() => tagStore.tags.map((t) => t.name));
 
 // 父级任务候选：同工作区所有任务扁平列表（编辑时排除自身）
 const parentOptions = computed<TaskNode[]>(() => {
@@ -50,13 +39,109 @@ const parentOptions = computed<TaskNode[]>(() => {
   return all.filter((t) => t.id !== editingId);
 });
 
+// 分组候选列表
+const groupOptions = computed<WorkspaceGroup[]>(() => workspace.activeGroups);
+
 const dialogTitle = computed(() => (ui.taskEditId === null ? '新建任务' : '编辑任务'));
+
+// —— 分组 combobox ——
+const groupSearch = ref('');
+const groupDropdownOpen = ref(false);
+const filteredGroups = computed<WorkspaceGroup[]>(() => {
+  const q = groupSearch.value.trim().toLowerCase();
+  if (!q) return groupOptions.value;
+  return groupOptions.value.filter((g) => g.name.toLowerCase().includes(q));
+});
+const selectedGroup = computed<WorkspaceGroup | null>(() => {
+  if (!form.value.groupId) return null;
+  return groupOptions.value.find((g) => g.id === form.value.groupId) ?? null;
+});
+function openGroupDropdown() {
+  groupDropdownOpen.value = true;
+  groupSearch.value = selectedGroup.value?.name ?? '';
+}
+function closeGroupDropdown() {
+  groupDropdownOpen.value = false;
+  const q = groupSearch.value.trim().toLowerCase();
+  if (!q) {
+    form.value.groupId = null;
+    return;
+  }
+  // 若完全匹配则确定选中；不匹配时保留文字（将在保存时自动创建新分组）
+  const match = groupOptions.value.find((g) => g.name.toLowerCase() === q);
+  if (match) {
+    form.value.groupId = match.id;
+    groupSearch.value = match.name;
+  } else {
+    form.value.groupId = null; // 暂未创建，保存时再建立
+    // groupSearch 保留用户输入的原文
+  }
+}
+function selectGroup(g: WorkspaceGroup) {
+  form.value.groupId = g.id;
+  groupSearch.value = g.name;
+  groupDropdownOpen.value = false;
+}
+function clearGroup() {
+  form.value.groupId = null;
+  groupSearch.value = '';
+  groupDropdownOpen.value = false;
+}
+
+// —— 父级任务 combobox ——
+const parentSearch = ref('');
+const parentDropdownOpen = ref(false);
+const filteredParents = computed<TaskNode[]>(() => {
+  const q = parentSearch.value.trim().toLowerCase();
+  if (!q) return parentOptions.value;
+  return parentOptions.value.filter((t) => {
+    const label = `${t.code ? `${t.code}: ` : ''}${t.title}`.toLowerCase();
+    return label.includes(q);
+  });
+});
+const selectedParent = computed<TaskNode | null>(() => {
+  if (!form.value.parentId) return null;
+  return parentOptions.value.find((t) => t.id === form.value.parentId) ?? null;
+});
+function openParentDropdown() {
+  parentDropdownOpen.value = true;
+  parentSearch.value = selectedParent.value
+    ? `${selectedParent.value.code ? `${selectedParent.value.code}: ` : ''}${selectedParent.value.title}`
+    : '';
+}
+function closeParentDropdown() {
+  parentDropdownOpen.value = false;
+  const q = parentSearch.value.trim().toLowerCase();
+  if (!q) {
+    form.value.parentId = null;
+    return;
+  }
+  const match = parentOptions.value.find((t) => {
+    const label = `${t.code ? `${t.code}: ` : ''}${t.title}`.toLowerCase();
+    return label === q;
+  });
+  if (!match) {
+    form.value.parentId = null;
+    parentSearch.value = '';
+  }
+}
+function selectParent(task: TaskNode) {
+  form.value.parentId = task.id;
+  parentSearch.value = `${task.code ? `${task.code}: ` : ''}${task.title}`;
+  parentDropdownOpen.value = false;
+}
+function clearParent() {
+  form.value.parentId = null;
+  parentSearch.value = '';
+  parentDropdownOpen.value = false;
+}
 
 // 加载现有任务数据
 function loadFromTask(task: TaskNode | undefined) {
   if (!task) {
     form.value = emptyForm();
-    plainText.value = '';
+    groupSearch.value = '';
+    parentSearch.value = '';
     return;
   }
   form.value = {
@@ -64,10 +149,20 @@ function loadFromTask(task: TaskNode | undefined) {
     status: task.status,
     tags: [...task.tags],
     code: task.code ?? '',
+    groupId: task.groupId ?? null,
     parentId: task.parentId,
     note: task.note ?? '',
   };
-  syncStructuredToPlain();
+  // 回显分组输入框
+  const grp = task.groupId ? groupOptions.value.find((g) => g.id === task.groupId) : null;
+  groupSearch.value = grp?.name ?? '';
+  // 回显父级输入框
+  const parent = task.parentId
+    ? parentOptions.value.find((t) => t.id === task.parentId)
+    : null;
+  parentSearch.value = parent
+    ? `${parent.code ? `${parent.code}: ` : ''}${parent.title}`
+    : '';
 }
 
 function findTask(id: string | null): TaskNode | undefined {
@@ -75,60 +170,11 @@ function findTask(id: string | null): TaskNode | undefined {
   return workspace.activeFile?.tasks[id];
 }
 
-// 结构化 → 纯文本（复用 serializer 保证 round-trip）
-function syncStructuredToPlain() {
-  const f = form.value;
-  const task: TaskNode = {
-    id: 'draft',
-    parentId: null,
-    title: f.title,
-    status: f.status,
-    tags: f.tags,
-    code: f.code || undefined,
-    note: f.note || undefined,
-    groupId: null,
-    createdAt: 0,
-    updatedAt: 0,
-  };
-  plainText.value = serializeTasks([task], [], ['draft']);
-}
-
-// 纯文本 → 结构化（取首个解析任务，保留 parentId）
-function syncPlainToStructured() {
-  const r = parseTaskText(plainText.value, tagNames.value);
-  if (r.tasks.length === 0) return;
-  const t = r.tasks[0];
-  form.value = {
-    title: t.title,
-    status: t.status,
-    tags: [...t.tags],
-    code: t.code ?? '',
-    parentId: form.value.parentId,
-    note: t.note ?? '',
-  };
-}
-
-function switchTab(tab: 'structured' | 'plain') {
-  if (tab === activeTab.value) return;
-  if (activeTab.value === 'structured') {
-    syncStructuredToPlain();
-  } else {
-    syncPlainToStructured();
-  }
-  activeTab.value = tab;
-}
-
-// 纯文本实时预览
-const previewResult = computed<ParseResult>(() =>
-  parseTaskText(plainText.value, tagNames.value),
-);
-
 // 打开时初始化
 watch(
   () => ui.taskEditOpen,
   (open) => {
     if (!open) return;
-    activeTab.value = 'structured';
     const task = findTask(ui.taskEditId);
     loadFromTask(task);
   },
@@ -156,34 +202,39 @@ function close() {
 
 async function save() {
   if (typeof window.api === 'undefined' && ui.taskEditId === null) {
-    // 无 API（纯 Vite dev）下仅做本地占位写入
     ui.showToast('当前环境无法保存任务', 'error');
     close();
     return;
   }
-  let payload: Partial<TaskNode>;
-  if (activeTab.value === 'plain') {
-    syncPlainToStructured();
-    payload = {
-      title: form.value.title,
-      status: form.value.status,
-      tags: form.value.tags,
-      code: form.value.code || undefined,
-      parentId: form.value.parentId,
-      note: form.value.note || undefined,
-    };
-  } else {
-    payload = {
-      title: form.value.title,
-      status: form.value.status,
-      tags: form.value.tags,
-      code: form.value.code || undefined,
-      parentId: form.value.parentId,
-      note: form.value.note || undefined,
-    };
+
+  // —— 分组：如果输入内容不匹配任何现有分组，则先创建新分组 ——
+  let resolvedGroupId: string | null = form.value.groupId ?? null;
+  const trimmedGroupName = groupSearch.value.trim();
+  if (trimmedGroupName && !resolvedGroupId) {
+    const existing = groupOptions.value.find(
+      (g) => g.name.toLowerCase() === trimmedGroupName.toLowerCase(),
+    );
+    if (existing) {
+      resolvedGroupId = existing.id;
+    } else {
+      const newGrp = await workspace.createGroup(trimmedGroupName);
+      if (newGrp && newGrp.id) {
+        resolvedGroupId = newGrp.id;
+      }
+    }
   }
+
+  const payload: Partial<TaskNode> = {
+    title: form.value.title,
+    status: form.value.status,
+    tags: [...form.value.tags],
+    code: form.value.code || undefined,
+    groupId: resolvedGroupId,
+    parentId: form.value.parentId,
+    note: form.value.note || undefined,
+  };
   if (!payload.title) {
-    ui.showToast('任务标题不能为空', 'error');
+    ui.showToast('任务内容不能为空', 'error');
     return;
   }
   if (ui.taskEditId === null) {
@@ -204,10 +255,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('taskjian:save-task-edit', onSaveShortcut);
 });
-
-function onBackdropClick() {
-  close();
-}
 </script>
 
 <template>
@@ -215,7 +262,6 @@ function onBackdropClick() {
     <div
       v-if="ui.taskEditOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      @click.self="onBackdropClick"
     >
       <div
         role="dialog"
@@ -238,47 +284,18 @@ function onBackdropClick() {
           </button>
         </div>
 
-        <!-- Tab bar -->
-        <div class="flex items-center gap-1 px-4 pt-2 border-b border-border">
-          <button
-            type="button"
-            class="px-3 py-1.5 rounded-t-md text-sm font-medium transition-colors"
-            :class="
-              activeTab === 'structured'
-                ? 'text-primary border-b-2 border-primary -mb-px'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="switchTab('structured')"
-          >
-            结构化编辑
-          </button>
-          <button
-            type="button"
-            class="px-3 py-1.5 rounded-t-md text-sm font-medium transition-colors"
-            :class="
-              activeTab === 'plain'
-                ? 'text-primary border-b-2 border-primary -mb-px'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="switchTab('plain')"
-          >
-            纯文本编辑
-          </button>
-        </div>
-
         <!-- Body -->
         <div class="p-4 overflow-y-auto" data-scroll-region="primary">
-          <!-- 结构化 Tab -->
-          <div v-show="activeTab === 'structured'" class="flex flex-col gap-4 max-w-2xl">
+          <div class="flex flex-col gap-4 max-w-2xl">
             <div class="flex flex-col gap-1.5">
-              <label class="text-[13px] font-medium text-foreground" for="input-title">标题</label>
-              <input
+              <label class="text-[13px] font-medium text-foreground" for="input-title">内容</label>
+              <textarea
                 id="input-title"
-                type="text"
                 v-model="form.title"
-                placeholder="输入任务标题..."
-                class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-              />
+                rows="5"
+                placeholder="输入任务内容..."
+                class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm resize-y focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+              ></textarea>
             </div>
 
             <div class="flex flex-col gap-1.5">
@@ -334,29 +351,94 @@ function onBackdropClick() {
               </div>
             </div>
 
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[13px] font-medium text-foreground" for="input-code">编号（可选）</label>
-              <input
-                id="input-code"
-                type="text"
-                v-model="form.code"
-                placeholder="如 101"
-                class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm font-mono focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-              />
+            <!-- 编号 + 分组（两列布局更紧凑） -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[13px] font-medium text-foreground" for="input-code">编号（可选）</label>
+                <input
+                  id="input-code"
+                  type="text"
+                  v-model="form.code"
+                  placeholder="如 101"
+                  class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm font-mono focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                />
+              </div>
+
+              <!-- 分组：可筛选 combobox -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[13px] font-medium text-foreground">分组</label>
+                <div class="relative">
+                  <input
+                    type="text"
+                    v-model="groupSearch"
+                    placeholder="（无，未分组）"
+                    class="w-full px-3 py-2 pr-8 rounded-md border border-border bg-card text-foreground text-sm focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                    @focus="openGroupDropdown"
+                    @blur="closeGroupDropdown"
+                  />
+                  <button
+                    v-if="form.groupId"
+                    type="button"
+                    aria-label="清除分组"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 inline-flex items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    @mousedown.prevent="clearGroup"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                  </button>
+                  <ul
+                    v-if="groupDropdownOpen && filteredGroups.length > 0"
+                    class="absolute z-10 left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-card shadow-2"
+                  >
+                    <li
+                      v-for="g in filteredGroups"
+                      :key="g.id"
+                      class="px-3 py-1.5 text-sm text-foreground cursor-pointer hover:bg-muted transition-colors truncate"
+                      @mousedown.prevent="selectGroup(g)"
+                    >
+                      {{ g.name }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
+            <!-- 父级任务：可筛选 combobox -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-[13px] font-medium text-foreground" for="select-parent">父级任务</label>
-              <select
-                id="select-parent"
-                v-model="form.parentId"
-                class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-              >
-                <option :value="null">（无，作为顶层任务）</option>
-                <option v-for="t in parentOptions" :key="t.id" :value="t.id">
-                  {{ t.code ? `${t.code}: ` : '' }}{{ t.title }}
-                </option>
-              </select>
+              <label class="text-[13px] font-medium text-foreground">父级任务</label>
+              <div class="relative">
+                <input
+                  type="text"
+                  v-model="parentSearch"
+                  placeholder="（无，作为顶层任务）"
+                  class="w-full px-3 py-2 pr-8 rounded-md border border-border bg-card text-foreground text-sm focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                  @focus="openParentDropdown"
+                  @blur="closeParentDropdown"
+                />
+                <!-- 清除按钮 -->
+                <button
+                  v-if="form.parentId"
+                  type="button"
+                  aria-label="清除父级"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 inline-flex items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  @mousedown.prevent="clearParent"
+                >
+                  <X class="w-3.5 h-3.5" />
+                </button>
+                <!-- 下拉列表 -->
+                <ul
+                  v-if="parentDropdownOpen && filteredParents.length > 0"
+                  class="absolute z-10 left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-card shadow-2"
+                >
+                  <li
+                    v-for="t in filteredParents"
+                    :key="t.id"
+                    class="px-3 py-1.5 text-sm text-foreground cursor-pointer hover:bg-muted transition-colors truncate"
+                    @mousedown.prevent="selectParent(t)"
+                  >
+                    {{ t.code ? `${t.code}: ` : '' }}{{ t.title }}
+                  </li>
+                </ul>
+              </div>
             </div>
 
             <div class="flex flex-col gap-1.5">
@@ -368,63 +450,6 @@ function onBackdropClick() {
                 placeholder="补充说明..."
                 class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm resize-y focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
               ></textarea>
-            </div>
-          </div>
-
-          <!-- 纯文本 Tab -->
-          <div v-show="activeTab === 'plain'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[13px] font-medium text-foreground" for="input-text">纯文本</label>
-              <textarea
-                id="input-text"
-                v-model="plainText"
-                rows="14"
-                placeholder="- T1 任务标题&#10;└─ 备注..."
-                class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm font-mono resize-y focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-              ></textarea>
-              <p class="text-xs text-muted-foreground">
-                前缀：<code class="font-mono">-</code> 待办 / <code class="font-mono">=</code> 进行中 /
-                <code class="font-mono">▲</code> 受阻 / <code class="font-mono">*</code> 已完成
-              </p>
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <span class="text-[13px] font-medium text-foreground">解析预览</span>
-              <div class="border border-border rounded-md bg-muted/30 p-3 overflow-y-auto max-h-96">
-                <div v-if="previewResult.tasks.length === 0" class="text-xs text-muted-foreground">
-                  无可解析任务
-                </div>
-                <ul v-else class="space-y-2">
-                  <li
-                    v-for="t in previewResult.tasks"
-                    :key="t.id"
-                    class="flex items-start gap-2 text-sm"
-                  >
-                    <span
-                      class="mt-1 inline-flex w-2 h-2 rounded-full shrink-0"
-                      :style="{ backgroundColor: STATUS_COLORS[t.status] }"
-                    />
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-1.5 flex-wrap">
-                        <span
-                          v-for="tn in t.tags"
-                          :key="tn"
-                          class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium text-white"
-                          :style="{ backgroundColor: tagStore.tagMap.get(tn)?.color ?? '#9ca3af' }"
-                          >{{ tn }}</span
-                        >
-                        <span v-if="t.code" class="text-xs text-muted-foreground font-mono">{{ t.code }}</span>
-                        <span class="text-foreground break-words">{{ t.title || '（空标题）' }}</span>
-                      </div>
-                      <p v-if="t.note" class="mt-0.5 text-xs text-muted-foreground whitespace-pre-line break-words">
-                        {{ t.note }}
-                      </p>
-                    </div>
-                  </li>
-                </ul>
-                <p v-if="previewResult.errors.length > 0" class="mt-2 text-xs text-[var(--taskjian-state-error)]">
-                  第 {{ previewResult.errors[0].line }} 行解析失败
-                </p>
-              </div>
             </div>
           </div>
         </div>
