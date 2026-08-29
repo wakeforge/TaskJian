@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Pencil, Archive, Trash2 } from 'lucide-vue-next';
+import { Archive, Trash2, CornerDownRight } from 'lucide-vue-next';
 import { useTagStore } from '../stores/tag';
 import { useUiStore } from '../stores/ui';
 import { useWorkspaceStore, type TreeNode } from '../stores/workspace';
@@ -139,6 +139,13 @@ const hoverClass = computed(() => {
 function openEdit() {
   uiStore.openTaskEdit(task.value.id);
 }
+// 创建子项：以当前任务为父级、继承分组，打开新建任务弹窗
+function onCreateChild() {
+  uiStore.openTaskEdit(null, {
+    parentId: task.value.id,
+    groupId: task.value.groupId ?? null,
+  });
+}
 function onArchive() {
   uiStore.openConfirm('归档任务', `确定归档「${task.value.title}」吗？`, () =>
     workspaceStore.archiveTask(task.value.id),
@@ -174,29 +181,36 @@ function onDelete() {
       <span v-if="prefix" class="text-xs text-muted-foreground font-mono shrink-0 pt-0.5">{{
         prefix
       }}</span>
-      <StatusDot :status="task.status" :class="isRoot ? '' : '!mt-0.5'" />
+      <StatusDot :status="task.status" />
       <TagChip v-for="t in tagDefs" :key="t.name" :name="t.name" :color="t.color" />
       <span
         v-if="task.code"
-        class="text-xs text-muted-foreground font-mono shrink-0 pt-0.5"
+        class="text-xs text-muted-foreground font-mono shrink-0"
+        :class="task.status === 'done' ? 'line-through' : ''"
         >{{ task.code }}</span
       >
-      <span class="text-sm text-foreground break-words flex-1 min-w-0">{{ task.title }}</span>
+      <span
+        class="text-sm break-words flex-1 min-w-0"
+        :class="task.status === 'done' ? 'text-muted-foreground line-through' : 'text-foreground'"
+        >{{ task.title }}</span
+      >
       <!-- 行尾 hover 操作 -->
       <div
         class="flex items-center gap-0.5 opacity-0 group-hover/task:opacity-100 transition-opacity shrink-0"
       >
         <button
           type="button"
-          aria-label="编辑"
+          aria-label="创建子项"
+          title="创建子项"
           class="inline-flex items-center justify-center w-5 h-5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          @click.stop="openEdit"
+          @click.stop="onCreateChild"
         >
-          <Pencil class="w-3 h-3" />
+          <CornerDownRight class="w-3 h-3" />
         </button>
         <button
           type="button"
           aria-label="归档"
+          title="归档"
           class="inline-flex items-center justify-center w-5 h-5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           @click.stop="onArchive"
         >
@@ -205,6 +219,7 @@ function onDelete() {
         <button
           type="button"
           aria-label="删除"
+          title="删除"
           class="inline-flex items-center justify-center w-5 h-5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           @click.stop="onDelete"
         >

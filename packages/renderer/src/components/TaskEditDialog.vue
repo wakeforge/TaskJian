@@ -177,6 +177,22 @@ watch(
     if (!open) return;
     const task = findTask(ui.taskEditId);
     loadFromTask(task);
+    // 新建模式：应用预填默认值（如「创建子项」时继承父级任务与分组）
+    if (!task) {
+      const d = ui.taskEditDefaults;
+      if (d.parentId !== undefined) {
+        form.value.parentId = d.parentId;
+        const parent = parentOptions.value.find((t) => t.id === d.parentId);
+        parentSearch.value = parent
+          ? `${parent.code ? `${parent.code}: ` : ''}${parent.title}`
+          : '';
+      }
+      if (d.groupId !== undefined) {
+        form.value.groupId = d.groupId;
+        const grp = d.groupId ? groupOptions.value.find((g) => g.id === d.groupId) : null;
+        groupSearch.value = grp?.name ?? '';
+      }
+    }
   },
   { immediate: true },
 );
