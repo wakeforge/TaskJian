@@ -1,4 +1,4 @@
-# 任笺 TaskJian
+# 任 TaskJian
 
 轻办公任务便签 — 基于 Electron + Vue 3 的桌面任务管理应用。
 
@@ -12,6 +12,7 @@ TaskJian 是一款轻量级的桌面任务管理工具，支持任务分类、�
 - **Vue 3** — 前端框架
 - **TypeScript** — 类型安全
 - **Vite** — 前端构建工具
+- **esbuild** — 主进程/预加载脚本打包
 - **Tailwind CSS** — 样式框架
 - **Pinia** — 状态管理
 - **pnpm workspace** — Monorepo 管理
@@ -21,40 +22,41 @@ TaskJian 是一款轻量级的桌面任务管理工具，支持任务分类、�
 ```
 TaskJian/
 ├── packages/              # 项目源码（monorepo）
-│   ├── main/             # Electron 主进程
+│   ├── main/             # Electron 主进程（Node.js 后端）
 │   │   ├── src/
-│   │   │   ├── ipc/      # IPC 通信处理
-│   │   │   ├── storage/  # 数据存储
+│   │   │   ├── ipc/      # IPC 通信处理（任务/工作区/标签/设置/归档）
+│   │   │   ├── storage/  # 数据存储（JSON 文件读写）
 │   │   │   ├── index.ts  # 主进程入口
 │   │   │   └── menu.ts   # 应用菜单
-│   │   └── dist/         # 编译产物
+│   │   └── dist/         # esbuild 打包产物（单文件）
 │   │
-│   ├── preload/          # 预加载脚本
+│   ├── preload/          # 预加载脚本（安全桥接）
 │   │   ├── src/
 │   │   │   └── index.ts  # 主进程与渲染进程桥接
-│   │   └── dist/         # 编译产物
+│   │   └── dist/         # esbuild 打包产物（单文件）
 │   │
-│   ├── renderer/         # Vue 3 前端 UI
+│   ├── renderer/         # Vue 3 前端 UI（浏览器渲染进程）
 │   │   ├── src/
 │   │   │   ├── components/  # Vue 组件
 │   │   │   ├── views/       # 页面视图
 │   │   │   ├── stores/      # Pinia 状态管理
 │   │   │   ├── router/      # 路由配置
 │   │   │   └── composables/ # 组合式函数
-│   │   └── dist-renderer/   # Vite 构建产物
+│   │   ── dist-renderer/   # Vite 构建产物
 │   │
-│   └── shared/           # 共享工具
+│   └── shared/           # 共享工具（类型定义 + 解析器 + 序列化器）
 │       ├── src/
-│       │   ├── parser.ts    # 数据解析器
-│       │   └── serializer.ts # 数据序列化器
-│       └── dist/         # 编译产物
+│       │   ├── index.ts     # 类型定义、常量、generateId()
+│       │   ├── parser.ts    # 纯文本任务语法解析器
+│       │   └── serializer.ts # 任务数据序列化为纯文本
+│       └── dist/         # esbuild 打包产物 + tsc 类型声明
 │
 ├── build/                # 构建资源
 │   ├── icon.ico          # 应用图标（Windows）
 │   └── icon-source.jpg   # 图标源文件
 │
 ├── scripts/              # 构建脚本
-│   └── no-sign.js        # 跳过签名脚本
+│   └── no-sign.js        # 跳过代码签名脚本
 │
 ├── dist/                 # 打包输出（生成）
 │   ├── win-unpacked/     # 免安装版本
@@ -63,8 +65,8 @@ TaskJian/
 ├── package.json          # 项目配置
 ├── pnpm-workspace.yaml   # pnpm 工作区配置
 ├── electron-builder.yml  # 打包配置
-├── tsconfig.base.json    # TypeScript 配置
-└── vitest.config.ts      # 测试配置
+├── tsconfig.base.json    # TypeScript 基础配置
+── vitest.config.ts      # 测试配置
 ```
 
 ## 环境要求
@@ -88,7 +90,7 @@ pnpm dev
 
 这会同时启动：
 - Vite 开发服务器（http://localhost:5173）
-- Electron 应用（热重载）
+- Electron 应用（esbuild watch 模式热重载）
 
 ### 单独启动各部分
 
@@ -108,11 +110,11 @@ pnpm dev:main
 pnpm build
 ```
 
-这会编译：
-- `packages/shared` → `dist/`
-- `packages/main` → `dist/`
-- `packages/preload` → `dist/`
-- `packages/renderer` → `dist-renderer/`
+构建流程：
+1. `packages/shared` → esbuild 打包为 `dist/index.js`（4.2 KB）+ tsc 生成类型声明
+2. `packages/main` → esbuild 打包为 `dist/index.js`（19 KB，shared 已内联）
+3. `packages/preload` → esbuild 打包为 `dist/index.js`（2 KB，shared 已内联）
+4. `packages/renderer` → Vite 构建为 `dist-renderer/`
 
 ### 单独构建
 
@@ -124,14 +126,22 @@ pnpm build:renderer   # 构建渲染进程
 
 ## 打包发布
 
-### Windows 安装包
+### 仅生成免安装版（不打包 NSIS）
+
+```bash
+pnpm pack:win
+```
+
+输出到 `dist/win-unpacked/TaskJian.exe`，可直接运行。
+
+### Windows NSIS 安装包
 
 ```bash
 pnpm release:win
 ```
 
 输出到 `dist/` 目录：
-- `win-unpacked/` — 免安装版本（可直接运行 `TaskJian.exe`）
+- `win-unpacked/` — 免安装版本
 - `TaskJian Setup 1.0.0.exe` — NSIS 安装包
 
 ### macOS 安装包
@@ -180,20 +190,31 @@ pnpm typecheck
 - **Linux**: `~/.config/TaskJian/`
 
 数据文件包括：
-- `settings.json` — 应用设置
-- `workspaces/` — 工作区数据
+- `settings.json` — 应用设置（标签、主题、侧边栏状态等）
+- `workspaces/` — 工作区数据（任务、分组）
+- `archive.json` — 归档任务
+
+## 构建架构说明
+
+### 进程模型
+
+TaskJian 采用 Electron 双进程架构：
+
+| 进程 | 运行环境 | 职责 | 构建工具 |
+|------|---------|------|---------|
+| **Main** | Node.js | 文件系统操作、数据存储、IPC 处理 | esbuild |
+| **Preload** | Node.js（受限） | 安全桥接，暴露 IPC 接口给渲染进程 | esbuild |
+| **Renderer** | Chromium（浏览器） | UI 展示、用户交互 | Vite |
+
+### 打包产物
+
+esbuild 将 `shared` 包的代码内联到 `main` 和 `preload` 的 bundle 中，最终打包产物：
+
+- 零外部运行时依赖（无需 `node_modules`）
+- 每个进程一个 JS 文件（main 19 KB、preload 2 KB）
+- 代码经过 minify 压缩
 
 ## 常见问题
-
-### 打包时提示找不到 ulid 模块
-
-确保已执行 `pnpm install`，并且 `electron-builder.yml` 配置正确：
-
-```yaml
-files:
-  - node_modules/**/*
-asar: false
-```
 
 ### 打包时签名失败
 
@@ -202,6 +223,15 @@ asar: false
 ```yaml
 win:
   sign: scripts/no-sign.js  # 或自定义签名脚本
+```
+
+### 打包时旧文件残留
+
+构建脚本会自动清理 `dist/` 目录。如果手动打包遇到问题，可先删除旧产物：
+
+```bash
+Remove-Item -Recurse -Force dist\win-unpacked
+pnpm pack:win
 ```
 
 ## 许可证
