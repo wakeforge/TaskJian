@@ -2,9 +2,9 @@
 // 输入多行纯文本，输出 ParseResult（groups / tasks / rootOrder / errors）。
 // 详见 docs/superpowers/specs/2026-08-29-taskjian-init-design.md 第 4 节 EBNF。
 
-import { ulid } from 'ulid';
 import {
   PREFIX_TO_STATUS,
+  generateId,
   type ParseResult,
   type TaskNode,
   type TaskStatus,
@@ -121,7 +121,7 @@ export function parseTaskText(text: string, tagNames: string[]): ParseResult {
       if (content.startsWith('【') && content.includes('】')) {
         const m = content.match(/^【([^】]*)】/);
         if (m) {
-          const id = ulid();
+          const id = generateId();
           groups.push({ id, name: m[1], order: groups.length });
           currentGroupId = id;
           continue;
@@ -149,7 +149,7 @@ export function parseTaskText(text: string, tagNames: string[]): ParseResult {
         }
         // 降级为顶层 todo 任务
         const now = Date.now();
-        const id = ulid();
+        const id = generateId();
         const { tags, code, title } = extractTagsCodeTitle(content, tagSet, tagPattern);
         const task: TaskNode = {
           id,
@@ -176,7 +176,7 @@ export function parseTaskText(text: string, tagNames: string[]): ParseResult {
       const rest = content.slice(1).replace(/^\s+/, '');
       const { tags, code, title } = extractTagsCodeTitle(rest, tagSet, tagPattern);
       const now = Date.now();
-      const id = ulid();
+      const id = generateId();
       const task: TaskNode = {
         id,
         parentId: parentEntry ? parentEntry.taskId : null,

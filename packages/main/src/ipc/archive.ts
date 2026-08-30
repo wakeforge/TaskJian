@@ -1,17 +1,16 @@
 // 归档 IPC handlers：list / restore。
 // archive.json#tasks 是一个扁平数组；归档时按子树整体写入。
 import { ipcMain } from 'electron';
-import { ulid } from 'ulid';
-import type { IpcResult, TaskNode } from '@taskjian/shared';
+import { generateId, type IpcResult, TaskNode } from '@taskjian/shared';
 import { archiveRepo, workspaceRepo } from '../storage/repo';
 
 function ok<T>(data: T): IpcResult<T> {
-  return { code: 0, message: 'ok', data, reqId: ulid() };
+  return { code: 0, message: 'ok', data, reqId: generateId() };
 }
 
 function fail(err: unknown): IpcResult {
   const message = err instanceof Error ? err.message : String(err);
-  return { code: 1, message, reqId: ulid() };
+  return { code: 1, message, reqId: generateId() };
 }
 
 /**

@@ -35,9 +35,6 @@ importers:
       '@taskjian/shared':
         specifier: workspace:*
         version: link:../shared
-      ulid:
-        specifier: ^2.3.0
-        version: 2.4.0
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -102,11 +99,7 @@ importers:
         specifier: ^2.0.0
         version: 2.2.12(typescript@5.9.3)
 
-  packages/shared:
-    dependencies:
-      ulid:
-        specifier: ^2.3.0
-        version: 2.4.0
+  packages/shared: {}
 
 packages:
 
@@ -2042,10 +2035,6 @@ packages:
 
   ufo@1.6.4:
     resolution: {integrity: sha512-JFNbkD1Svwe0KvGi8GOeLcP4kAWQ609twvCdcHxq1oSL8svv39ZuSvajcD8B+5D0eL4+s1Is2D/O6KN3qcTeRA==}
-
-  ulid@2.4.0:
-    resolution: {integrity: sha512-fIRiVTJNcSRmXKPZtGzFQv9WRrZ3M9eoptl/teFJvjOzmpU+/K/JH6HZ8deBfb5vMEpicJcLn7JmvdknlMq7Zg==}
-    hasBin: true
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
@@ -4249,8 +4238,6 @@ snapshots:
   typescript@5.9.3: {}
 
   ufo@1.6.4: {}
-
-  ulid@2.4.0: {}
 
   undici-types@6.21.0: {}
 

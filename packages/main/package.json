@@ -10,8 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@taskjian/shared": "workspace:*",
-    "ulid": "^2.3.0"
+    "@taskjian/shared": "workspace:*"
   },
   "devDependencies": {
     "electron": "^30.0.0",

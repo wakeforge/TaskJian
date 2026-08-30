@@ -1,17 +1,16 @@
 // 设置 IPC handlers：get / update。
 // settings.json 包含 tags / activeWorkspaceId / theme / sidebarCollapsed 等。
 import { ipcMain } from 'electron';
-import { ulid } from 'ulid';
-import type { IpcResult, SettingsFile } from '@taskjian/shared';
+import { generateId, type IpcResult, SettingsFile } from '@taskjian/shared';
 import { settingsRepo } from '../storage/repo';
 
 function ok<T>(data: T): IpcResult<T> {
-  return { code: 0, message: 'ok', data, reqId: ulid() };
+  return { code: 0, message: 'ok', data, reqId: generateId() };
 }
 
 function fail(err: unknown): IpcResult {
   const message = err instanceof Error ? err.message : String(err);
-  return { code: 1, message, reqId: ulid() };
+  return { code: 1, message, reqId: generateId() };
 }
 
 export function registerSettingsIpc(): void {

@@ -16,6 +16,7 @@
     "build:renderer": "pnpm --filter @taskjian/renderer build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "pack:win": "pnpm build && electron-builder --win --x64 --dir",
     "release:win": "pnpm build && electron-builder --win --x64",
     "release:mac": "pnpm build && electron-builder --mac --x64 --arm64",
     "release:linux": "pnpm build && electron-builder --linux --x64",

@@ -9,7 +9,5 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "ulid": "^2.3.0"
-  }
+  "dependencies": {}
 }

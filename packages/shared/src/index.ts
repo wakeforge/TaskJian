@@ -139,3 +139,8 @@ export interface ParseResult {
 
 export { parseTaskText } from './parser';
 export { serializeTasks } from './serializer';
+
+/** 生成唯一 ID：时间戳-UUID，字典序即时间序 */
+export function generateId(): string {
+  return `${Date.now()}-${crypto.randomUUID()}`;
+}

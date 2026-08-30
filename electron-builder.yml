@@ -12,6 +12,9 @@ files:
   - node_modules/**/*
   - '!**/.map'
 asar: false
+extraResources:
+  - from: packages/shared/dist
+    to: app/node_modules/@taskjian/shared
 win:
   target:
     - nsis

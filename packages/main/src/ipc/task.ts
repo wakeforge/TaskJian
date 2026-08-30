@@ -1,18 +1,16 @@
 // 任务相关 IPC handlers：create / update / delete / move / archive / parseText。
 // 删除与归档均递归处理子树。
 import { ipcMain } from 'electron';
-import { ulid } from 'ulid';
-import { parseTaskText } from '@taskjian/shared';
-import type { IpcResult, ParseResult, TaskNode } from '@taskjian/shared';
+import { generateId, parseTaskText, type IpcResult, ParseResult, TaskNode } from '@taskjian/shared';
 import { archiveRepo, workspaceRepo } from '../storage/repo';
 
 function ok<T>(data: T): IpcResult<T> {
-  return { code: 0, message: 'ok', data, reqId: ulid() };
+  return { code: 0, message: 'ok', data, reqId: generateId() };
 }
 
 function fail(err: unknown): IpcResult {
   const message = err instanceof Error ? err.message : String(err);
-  return { code: 1, message, reqId: ulid() };
+  return { code: 1, message, reqId: generateId() };
 }
 
 /**
@@ -51,7 +49,7 @@ export function registerTaskIpc(): void {
           throw new Error(`Workspace not found: ${workspaceId}`);
         }
         const now = Date.now();
-        const id = partial.id ?? ulid();
+        const id = partial.id ?? generateId();
         // 计算 order：同级（同 parentId）已有任务的最大 order + 1
         const siblings = Object.values(file.tasks).filter(
           (t) => (t.parentId ?? null) === (partial.parentId ?? null),

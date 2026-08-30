@@ -1,17 +1,16 @@
 // 标签 IPC handlers：list / saveAll。
 // 标签定义存储在 settings.json#tags，整批读写。
 import { ipcMain } from 'electron';
-import { ulid } from 'ulid';
-import type { IpcResult, TagDef } from '@taskjian/shared';
+import { generateId, type IpcResult, TagDef } from '@taskjian/shared';
 import { settingsRepo } from '../storage/repo';
 
 function ok<T>(data: T): IpcResult<T> {
-  return { code: 0, message: 'ok', data, reqId: ulid() };
+  return { code: 0, message: 'ok', data, reqId: generateId() };
 }
 
 function fail(err: unknown): IpcResult {
   const message = err instanceof Error ? err.message : String(err);
-  return { code: 1, message, reqId: ulid() };
+  return { code: 1, message, reqId: generateId() };
 }
 
 export function registerTagIpc(): void {

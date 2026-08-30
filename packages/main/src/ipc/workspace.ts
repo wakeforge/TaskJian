@@ -1,17 +1,16 @@
 // 工作区相关 IPC handlers：list / get / create / rename / delete / setActive。
 // 所有 handler 用 try/catch 包装，返回 IpcResult<T>。
 import { ipcMain } from 'electron';
-import { ulid } from 'ulid';
-import type { IpcResult, Workspace, WorkspaceFile } from '@taskjian/shared';
+import { generateId, type IpcResult, Workspace, WorkspaceFile } from '@taskjian/shared';
 import { archiveRepo, settingsRepo, workspaceRepo } from '../storage/repo';
 
 function ok<T>(data: T): IpcResult<T> {
-  return { code: 0, message: 'ok', data, reqId: ulid() };
+  return { code: 0, message: 'ok', data, reqId: generateId() };
 }
 
 function fail(err: unknown): IpcResult {
   const message = err instanceof Error ? err.message : String(err);
-  return { code: 1, message, reqId: ulid() };
+  return { code: 1, message, reqId: generateId() };
 }
 
 export function registerWorkspaceIpc(): void {
@@ -47,13 +46,13 @@ export function registerWorkspaceIpc(): void {
     }
   });
 
-  // 创建新工作区：ulid 生成 id，order 取当前数量，写入空 WorkspaceFile。
+  // 创建新工作区：generateId 生成 id，order 取当前数量，写入空 WorkspaceFile。
   // 返回完整 Workspace 对象（含空 groups），便于渲染层直接 push 到列表。
   ipcMain.handle('workspace:create', async (_e, name: string) => {
     try {
       const now = Date.now();
       const existingIds = workspaceRepo.listIds();
-      const id = ulid();
+      const id = generateId();
       const workspace: Workspace = {
         id,
         name,

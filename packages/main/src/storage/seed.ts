@@ -1,7 +1,7 @@
 // 首次启动 seed：settings.json 不存在则写默认 settings；workspaces 目录为空则创建默认工作区。
-import { ulid } from 'ulid';
 import {
   DEFAULT_TAGS,
+  generateId,
   type SettingsFile,
   type Workspace,
   type WorkspaceFile,
@@ -20,7 +20,7 @@ export interface SeedDeps {
  * 首次启动 seed：
  * 1. 若 settings.json 不存在 → 写默认 settings（DEFAULT_TAGS、activeWorkspaceId=null、theme='system'、
  *    sidebarCollapsed=false、appVersion='1.0.0'、lastMigration=Date.now()）
- * 2. 紧接若 workspaces 目录为空 → 创建默认工作区（ulid id, name='默认工作区', groups=[], order=0）
+ * 2. 紧接若 workspaces 目录为空 → 创建默认工作区（generateId, name='默认工作区', groups=[], order=0）
  *    写入空 WorkspaceFile（tasks={}, rootOrder=[]），并把 settings.activeWorkspaceId 指向它。
  */
 export function seedIfEmpty(deps: SeedDeps = { settings: settingsRepo, workspace: workspaceRepo }): void {
@@ -41,7 +41,7 @@ export function seedIfEmpty(deps: SeedDeps = { settings: settingsRepo, workspace
     // workspaces 为空则创建默认工作区
     const ids = deps.workspace.listIds();
     if (ids.length === 0) {
-      const workspaceId = ulid();
+      const workspaceId = generateId();
       const workspace: Workspace = {
         id: workspaceId,
         name: DEFAULT_WORKSPACE_NAME,
