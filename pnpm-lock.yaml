@@ -20,6 +20,9 @@ importers:
       electron-builder:
         specifier: ^24.13.0
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
+      esbuild:
+        specifier: ^0.21.0
+        version: 0.21.5
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
