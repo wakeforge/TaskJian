@@ -220,7 +220,7 @@ onUnmounted(() => {
       <StatusDot :status="task.status" />
       <TagChip v-for="t in tagDefs" :key="t.name" :name="t.name" :color="t.color" />
       <span
-        class="text-sm break-words flex-1 min-w-0"
+        class="text-sm break-words flex-1 min-w-0 whitespace-pre-wrap"
         :class="task.status === 'done' ? 'text-muted-foreground line-through' : 'text-foreground'"
         >{{ task.title }}</span
       >
@@ -260,7 +260,7 @@ onUnmounted(() => {
     <!-- note 行（─ 前缀，无状态点） -->
     <div v-if="task.note" class="flex items-start gap-2 pl-8 pr-2 py-1">
       <span class="text-xs text-muted-foreground font-mono shrink-0">└─</span>
-      <span class="text-xs text-muted-foreground break-words">{{ task.note }}</span>
+      <span class="text-xs text-muted-foreground break-words whitespace-pre-wrap">{{ task.note }}</span>
     </div>
 
     <!-- 右键菜单 -->
