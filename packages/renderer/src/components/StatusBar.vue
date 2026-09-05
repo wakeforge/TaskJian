@@ -15,6 +15,6 @@ const summary = computed(() => workspaceStore.summary);
       {{ summary.blocked }} · 已完成 {{ summary.done }}
     </span>
     <span class="hidden md:block">快速添加: Ctrl+Enter</span>
-    <span>v1.0.0</span>
+    <span>v1.1.0</span>
   </footer>
 </template>
