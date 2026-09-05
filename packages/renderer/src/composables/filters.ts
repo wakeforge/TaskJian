@@ -32,9 +32,43 @@ export function applyFilter(tasks: TaskNode[], filter: FilterState): TaskNode[] 
     result = result.filter((t) => keep.has(t.id));
   }
 
-  // tag 过滤：tags 与 filter.tagNames 有交集
+  // tag 过滤：tags 与 filter.tagNames 有交集，显示匹配任务及其上下级节点
   if (filter.tagNames.length > 0) {
-    result = result.filter((t) => t.tags.some((tag) => filter.tagNames.includes(tag)));
+    const keep = new Set<string>();
+
+    // 1. 找出直接匹配的任务
+    for (const t of result) {
+      if (t.tags.some((tag) => filter.tagNames.includes(tag))) {
+        keep.add(t.id);
+      }
+    }
+
+    // 2. 上级扩散：保留命中节点的所有祖先节点（保证树路径可见）
+    for (const t of result) {
+      if (keep.has(t.id)) {
+        let p = t.parentId;
+        while (p) {
+          if (keep.has(p)) break;
+          keep.add(p);
+          const parent = tasks.find((x) => x.id === p);
+          p = parent?.parentId ?? null;
+        }
+      }
+    }
+
+    // 3. 下级扩散：保留命中节点的所有子孙节点（从全量任务中查找，避免无标签子任务被遗漏）
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const t of tasks) {
+        if (t.parentId && keep.has(t.parentId) && !keep.has(t.id)) {
+          keep.add(t.id);
+          changed = true;
+        }
+      }
+    }
+
+    result = result.filter((t) => keep.has(t.id));
   }
 
   // status 过滤：status ∈ filter.statuses
