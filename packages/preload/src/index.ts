@@ -97,6 +97,14 @@ const api = {
     openExternal: (url: string): Promise<void> =>
       ipcRenderer.invoke('window:openExternal', url),
   },
+  // 任务导出：弹出保存对话框并写入 Markdown 文件。
+  export: {
+    saveMarkdown: (
+      content: string,
+      defaultName: string,
+    ): Promise<IpcResult<{ canceled: boolean; filePath?: string }>> =>
+      ipcRenderer.invoke('export:saveMarkdown', content, defaultName),
+  },
   // 通用事件监听器：用于主进程向渲染进程推送事件
   on: (channel: string, cb: (...args: unknown[]) => void): void => {
     ipcRenderer.on(channel, (_e, ...args) => cb(...args));

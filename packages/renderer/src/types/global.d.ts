@@ -63,6 +63,12 @@ export interface TaskJianApi {
     /** 用系统默认浏览器打开外部链接 */
     openExternal(url: string): Promise<void>;
   };
+  export: {
+    saveMarkdown(
+      content: string,
+      defaultName: string,
+    ): Promise<IpcResult<{ canceled: boolean; filePath?: string }>>;
+  };
   on(channel: string, cb: (...args: unknown[]) => void): void;
 }
 

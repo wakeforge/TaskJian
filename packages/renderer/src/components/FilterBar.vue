@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { Tag, Filter, Plus, Search, X } from 'lucide-vue-next';
+import { Tag, Filter, Plus, Search, X, Download } from 'lucide-vue-next';
 import { useUiStore } from '../stores/ui';
 import { useWorkspaceStore } from '../stores/workspace';
 import { STATUS_LABELS, type TaskStatus } from '@taskjian/shared';
 import FilterChip from './FilterChip.vue';
+import { formatTasksAsMarkdown } from '../composables/taskExport';
 
 const ui = useUiStore();
 const workspaceStore = useWorkspaceStore();
@@ -79,6 +80,20 @@ function clearSearch() {
   searchTextInput.value = '';
   workspaceStore.setFilter({ searchText: '' });
 }
+
+// —— 导出任务为 Markdown ——
+async function exportTasks() {
+  const ws = workspaceStore.activeFile;
+  if (!ws) return;
+  const roots = workspaceStore.filteredTree;
+  if (roots.length === 0) return;
+  const content = formatTasksAsMarkdown(roots);
+  const defaultName = ws.workspace.name || 'tasks';
+  const res = await window.api.export.saveMarkdown(content, defaultName);
+  if (res.code !== 0) {
+    console.error('导出失败:', res.message);
+  }
+}
 </script>
 
 <template>
@@ -148,6 +163,15 @@ function clearSearch() {
       @click="ui.tagManagementOpen = true"
     >
       管理标签
+    </button>
+    <button
+      type="button"
+      data-dom-id="btn-task-export"
+      class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+      @click="exportTasks"
+    >
+      <Download class="w-3 h-3 text-muted-foreground" />
+      导出
     </button>
     <button
       type="button"

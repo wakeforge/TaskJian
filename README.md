@@ -24,7 +24,7 @@ TaskJian/
 ├── packages/              # 项目源码（monorepo）
 │   ├── main/             # Electron 主进程（Node.js 后端）
 │   │   ├── src/
-│   │   │   ├── ipc/      # IPC 通信处理（任务/工作区/标签/设置/归档）
+│   │   │   ├── ipc/      # IPC 通信处理（任务/工作区/标签/设置/归档/导出）
 │   │   │   ├── storage/  # 数据存储（JSON 文件读写）
 │   │   │   ├── index.ts  # 主进程入口
 │   │   │   └── menu.ts   # 应用菜单
