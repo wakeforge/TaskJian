@@ -52,12 +52,12 @@ function computeIndent(line: string): { indent: number; content: string } {
   return { indent: wsLevels + treeLevels, content };
 }
 
-/** 从行内容中剥离 tags / code，得到 { tags, code, title } */
-function extractTagsCodeTitle(
+/** 从行内容中剥离 tags，得到 { tags, title } */
+function extractTagsTitle(
   s: string,
   tagSet: Set<string>,
   tagPattern: string | null,
-): { tags: string[]; code?: string; title: string } {
+): { tags: string[]; title: string } {
   const tags: string[] = [];
   let rest = s;
 
@@ -73,16 +73,8 @@ function extractTagsCodeTitle(
     }
   }
 
-  // code: ^(\d+):
-  let code: string | undefined;
-  const codeMatch = rest.match(/^(\d+):/);
-  if (codeMatch) {
-    code = codeMatch[1];
-    rest = rest.slice(codeMatch[0].length).replace(/^\s+/, '');
-  }
-
   const title = rest.replace(/\s+$/, '');
-  return { tags, code, title };
+  return { tags, title };
 }
 
 /**
@@ -150,14 +142,13 @@ export function parseTaskText(text: string, tagNames: string[]): ParseResult {
         // 降级为顶层 todo 任务
         const now = Date.now();
         const id = generateId();
-        const { tags, code, title } = extractTagsCodeTitle(content, tagSet, tagPattern);
+        const { tags, title } = extractTagsTitle(content, tagSet, tagPattern);
         const task: TaskNode = {
           id,
           parentId: null,
           title,
           status: 'todo' as TaskStatus,
           tags,
-          code,
           note: undefined,
           groupId: currentGroupId,
           order: tasks.length,
@@ -174,7 +165,7 @@ export function parseTaskText(text: string, tagNames: string[]): ParseResult {
       const status = PREFIX_TO_STATUS[firstChar];
       const prefix = firstChar;
       const rest = content.slice(1).replace(/^\s+/, '');
-      const { tags, code, title } = extractTagsCodeTitle(rest, tagSet, tagPattern);
+      const { tags, title } = extractTagsTitle(rest, tagSet, tagPattern);
       const now = Date.now();
       const id = generateId();
       const task: TaskNode = {
@@ -183,7 +174,6 @@ export function parseTaskText(text: string, tagNames: string[]): ParseResult {
         title,
         status,
         tags,
-        code,
         prefix,
         note: undefined,
         groupId: parentEntry ? undefined : currentGroupId,

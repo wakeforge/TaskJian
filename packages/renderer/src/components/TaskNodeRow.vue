@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { Archive, Trash2, CornerDownRight } from 'lucide-vue-next';
 import { useTagStore } from '../stores/tag';
 import { useUiStore } from '../stores/ui';
@@ -156,6 +156,41 @@ function onDelete() {
     workspaceStore.deleteTask(task.value.id),
   );
 }
+
+// —— 右键菜单 ——
+const contextMenu = ref({ visible: false, x: 0, y: 0 });
+
+function onContextMenu(e: MouseEvent) {
+  e.preventDefault();
+  contextMenu.value = { visible: true, x: e.clientX, y: e.clientY };
+}
+
+function closeContextMenu() {
+  contextMenu.value.visible = false;
+}
+
+function onMenuCreateChild() {
+  closeContextMenu();
+  onCreateChild();
+}
+
+function onMenuArchive() {
+  closeContextMenu();
+  onArchive();
+}
+
+function onMenuDelete() {
+  closeContextMenu();
+  onDelete();
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeContextMenu);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeContextMenu);
+});
 </script>
 
 <template>
@@ -177,18 +212,13 @@ function onDelete() {
       @dragleave="onDragLeave"
       @drop="onDrop"
       @click="openEdit"
+      @contextmenu="onContextMenu"
     >
       <span v-if="prefix" class="text-xs text-muted-foreground font-mono shrink-0 pt-0.5">{{
         prefix
       }}</span>
       <StatusDot :status="task.status" />
       <TagChip v-for="t in tagDefs" :key="t.name" :name="t.name" :color="t.color" />
-      <span
-        v-if="task.code"
-        class="text-xs text-muted-foreground font-mono shrink-0"
-        :class="task.status === 'done' ? 'line-through' : ''"
-        >{{ task.code }}</span
-      >
       <span
         class="text-sm break-words flex-1 min-w-0"
         :class="task.status === 'done' ? 'text-muted-foreground line-through' : 'text-foreground'"
@@ -227,11 +257,47 @@ function onDelete() {
         </button>
       </div>
     </div>
-    <!-- note 行（└─ 前缀，无状态点） -->
+    <!-- note 行（─ 前缀，无状态点） -->
     <div v-if="task.note" class="flex items-start gap-2 pl-8 pr-2 py-1">
       <span class="text-xs text-muted-foreground font-mono shrink-0">└─</span>
       <span class="text-xs text-muted-foreground break-words">{{ task.note }}</span>
     </div>
+
+    <!-- 右键菜单 -->
+    <Teleport to="body">
+      <div
+        v-if="contextMenu.visible"
+        class="fixed z-50 min-w-[160px] py-1 bg-card border border-border rounded-md shadow-lg"
+        :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+        @click.stop
+      >
+        <button
+          type="button"
+          class="w-full px-3 py-1.5 text-sm text-left hover:bg-muted flex items-center gap-2"
+          @click="onMenuCreateChild"
+        >
+          <CornerDownRight class="w-3.5 h-3.5" />
+          创建子项
+        </button>
+        <div class="border-t border-border my-1" />
+        <button
+          type="button"
+          class="w-full px-3 py-1.5 text-sm text-left hover:bg-muted flex items-center gap-2"
+          @click="onMenuArchive"
+        >
+          <Archive class="w-3.5 h-3.5" />
+          归档
+        </button>
+        <button
+          type="button"
+          class="w-full px-3 py-1.5 text-sm text-left hover:bg-muted text-destructive flex items-center gap-2"
+          @click="onMenuDelete"
+        >
+          <Trash2 class="w-3.5 h-3.5" />
+          删除
+        </button>
+      </div>
+    </Teleport>
     <!-- 子任务（├─ / └─ 前缀，递归） -->
     <div v-if="node.children.length" class="pl-8 pr-2 space-y-1">
       <TaskNodeRow

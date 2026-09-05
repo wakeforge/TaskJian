@@ -209,11 +209,6 @@ onMounted(async () => {
             class="flex items-center gap-3 px-3 py-2 rounded-md border border-border bg-card/50 text-muted-foreground"
           >
             <CheckCircle2 class="w-4 h-4 text-muted-foreground shrink-0" />
-            <span
-              v-if="t.code"
-              class="text-xs text-muted-foreground shrink-0 font-mono"
-              >{{ t.code }}</span
-            >
             <span class="text-sm text-muted-foreground line-through flex-1 break-words">
               {{ t.title }}
             </span>

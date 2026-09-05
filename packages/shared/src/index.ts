@@ -84,7 +84,7 @@ export interface FilterState {
   groupId: string | null;
   tagNames: string[];
   statuses: TaskStatus[];
-  /** 任务搜索关键字（title/code/note 包含匹配，空 = 不过滤） */
+  /** 任务搜索关键字（title/note 包含匹配，空 = 不过滤） */
   searchText: string;
 }
 

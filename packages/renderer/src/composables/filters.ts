@@ -47,7 +47,6 @@ export function applyFilter(tasks: TaskNode[], filter: FilterState): TaskNode[] 
   if (q) {
     const match = (t: TaskNode): boolean =>
       t.title.toLowerCase().includes(q) ||
-      (t.code ?? '').toLowerCase().includes(q) ||
       (t.note ?? '').toLowerCase().includes(q);
     // 命中节点 → 保留其全部子孙（上下文展开）
     const keep = new Set<string>();

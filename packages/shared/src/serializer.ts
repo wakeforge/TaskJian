@@ -11,19 +11,14 @@ function indentPrefix(depth: number, isLast: boolean): string {
   return pad + connector;
 }
 
-/** 格式化单行任务文本：prefix + tags + code? + title */
+/** 格式化单行任务文本：prefix + tags + title */
 function formatLine(task: TaskNode): string {
   const prefix = STATUS_PREFIX[task.status];
   let head = prefix;
   if (task.tags.length > 0) {
     head += task.tags.join(' ');
   }
-  let tail: string;
-  if (task.code !== undefined && task.code !== '') {
-    tail = `${task.code}: ${task.title}`;
-  } else {
-    tail = task.title;
-  }
+  const tail = task.title;
   if (tail === '') return head;
   return `${head} ${tail}`;
 }

@@ -61,7 +61,6 @@ export function registerTaskIpc(): void {
           title: partial.title ?? '',
           status: partial.status ?? 'todo',
           tags: partial.tags ?? [],
-          code: partial.code,
           prefix: partial.prefix,
           note: partial.note,
           groupId: partial.groupId ?? null,

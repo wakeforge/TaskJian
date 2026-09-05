@@ -14,7 +14,6 @@ interface StructuredForm {
   title: string;
   status: TaskStatus;
   tags: string[];
-  code: string;
   groupId: string | null;
   parentId: string | null;
   note: string;
@@ -24,7 +23,6 @@ const emptyForm = (): StructuredForm => ({
   title: '',
   status: 'todo',
   tags: [],
-  code: '',
   groupId: null,
   parentId: null,
   note: '',
@@ -94,10 +92,7 @@ const parentDropdownOpen = ref(false);
 const filteredParents = computed<TaskNode[]>(() => {
   const q = parentSearch.value.trim().toLowerCase();
   if (!q) return parentOptions.value;
-  return parentOptions.value.filter((t) => {
-    const label = `${t.code ? `${t.code}: ` : ''}${t.title}`.toLowerCase();
-    return label.includes(q);
-  });
+  return parentOptions.value.filter((t) => t.title.toLowerCase().includes(q));
 });
 const selectedParent = computed<TaskNode | null>(() => {
   if (!form.value.parentId) return null;
@@ -105,9 +100,7 @@ const selectedParent = computed<TaskNode | null>(() => {
 });
 function openParentDropdown() {
   parentDropdownOpen.value = true;
-  parentSearch.value = selectedParent.value
-    ? `${selectedParent.value.code ? `${selectedParent.value.code}: ` : ''}${selectedParent.value.title}`
-    : '';
+  parentSearch.value = selectedParent.value?.title ?? '';
 }
 function closeParentDropdown() {
   parentDropdownOpen.value = false;
@@ -116,10 +109,7 @@ function closeParentDropdown() {
     form.value.parentId = null;
     return;
   }
-  const match = parentOptions.value.find((t) => {
-    const label = `${t.code ? `${t.code}: ` : ''}${t.title}`.toLowerCase();
-    return label === q;
-  });
+  const match = parentOptions.value.find((t) => t.title.toLowerCase() === q);
   if (!match) {
     form.value.parentId = null;
     parentSearch.value = '';
@@ -127,7 +117,7 @@ function closeParentDropdown() {
 }
 function selectParent(task: TaskNode) {
   form.value.parentId = task.id;
-  parentSearch.value = `${task.code ? `${task.code}: ` : ''}${task.title}`;
+  parentSearch.value = task.title;
   parentDropdownOpen.value = false;
 }
 function clearParent() {
@@ -148,7 +138,6 @@ function loadFromTask(task: TaskNode | undefined) {
     title: task.title,
     status: task.status,
     tags: [...task.tags],
-    code: task.code ?? '',
     groupId: task.groupId ?? null,
     parentId: task.parentId,
     note: task.note ?? '',
@@ -160,9 +149,7 @@ function loadFromTask(task: TaskNode | undefined) {
   const parent = task.parentId
     ? parentOptions.value.find((t) => t.id === task.parentId)
     : null;
-  parentSearch.value = parent
-    ? `${parent.code ? `${parent.code}: ` : ''}${parent.title}`
-    : '';
+  parentSearch.value = parent?.title ?? '';
 }
 
 function findTask(id: string | null): TaskNode | undefined {
@@ -183,9 +170,7 @@ watch(
       if (d.parentId !== undefined) {
         form.value.parentId = d.parentId;
         const parent = parentOptions.value.find((t) => t.id === d.parentId);
-        parentSearch.value = parent
-          ? `${parent.code ? `${parent.code}: ` : ''}${parent.title}`
-          : '';
+        parentSearch.value = parent?.title ?? '';
       }
       if (d.groupId !== undefined) {
         form.value.groupId = d.groupId;
@@ -244,7 +229,6 @@ async function save() {
     title: form.value.title,
     status: form.value.status,
     tags: [...form.value.tags],
-    code: form.value.code || undefined,
     groupId: resolvedGroupId,
     parentId: form.value.parentId,
     note: form.value.note || undefined,
@@ -367,22 +351,9 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- 编号 + 分组（两列布局更紧凑） -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-[13px] font-medium text-foreground" for="input-code">编号（可选）</label>
-                <input
-                  id="input-code"
-                  type="text"
-                  v-model="form.code"
-                  placeholder="如 101"
-                  class="w-full px-3 py-2 rounded-md border border-border bg-card text-foreground text-sm font-mono focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-                />
-              </div>
-
-              <!-- 分组：可筛选 combobox -->
-              <div class="flex flex-col gap-1.5">
-                <label class="text-[13px] font-medium text-foreground">分组</label>
+            <!-- 分组：可筛选 combobox -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[13px] font-medium text-foreground">分组</label>
               <div class="relative">
                 <input
                   type="text"
@@ -392,34 +363,33 @@ onUnmounted(() => {
                   @focus="openGroupDropdown"
                   @blur="closeGroupDropdown"
                 />
-                  <button
-                    v-if="form.groupId"
-                    type="button"
-                    aria-label="清除分组"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 inline-flex items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                    @mousedown.prevent="clearGroup"
+                <button
+                  v-if="form.groupId"
+                  type="button"
+                  aria-label="清除分组"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 inline-flex items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  @mousedown.prevent="clearGroup"
+                >
+                  <X class="w-3.5 h-3.5" />
+                </button>
+                <ul
+                  v-if="groupDropdownOpen && filteredGroups.length > 0"
+                  class="absolute z-10 left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-card shadow-2"
+                >
+                  <li
+                    v-for="g in filteredGroups"
+                    :key="g.id"
+                    class="px-3 py-1.5 text-sm text-foreground cursor-pointer hover:bg-muted transition-colors truncate"
+                    @mousedown.prevent="selectGroup(g)"
                   >
-                    <X class="w-3.5 h-3.5" />
-                  </button>
-                  <ul
-                    v-if="groupDropdownOpen && filteredGroups.length > 0"
-                    class="absolute z-10 left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-card shadow-2"
-                  >
-                    <li
-                      v-for="g in filteredGroups"
-                      :key="g.id"
-                      class="px-3 py-1.5 text-sm text-foreground cursor-pointer hover:bg-muted transition-colors truncate"
-                      @mousedown.prevent="selectGroup(g)"
-                    >
-                      {{ g.name }}
-                    </li>
-                  </ul>
+                    {{ g.name }}
+                  </li>
+                </ul>
                 <p class="mt-1 text-xs text-muted-foreground">
                   可从下拉列表选择已有分组，或直接输入新名称——保存后将自动创建该分组；清空则移出分组
                 </p>
               </div>
             </div>
-          </div>
 
             <!-- 父级任务：可筛选 combobox -->
             <div class="flex flex-col gap-1.5">
@@ -454,7 +424,7 @@ onUnmounted(() => {
                     class="px-3 py-1.5 text-sm text-foreground cursor-pointer hover:bg-muted transition-colors truncate"
                     @mousedown.prevent="selectParent(t)"
                   >
-                    {{ t.code ? `${t.code}: ` : '' }}{{ t.title }}
+                    {{ t.title }}
                   </li>
                 </ul>
               </div>
