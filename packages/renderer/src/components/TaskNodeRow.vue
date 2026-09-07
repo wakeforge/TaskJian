@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed } from 'vue';
 import { Archive, Trash2, CornerDownRight } from 'lucide-vue-next';
 import { useTagStore } from '../stores/tag';
 import { useUiStore } from '../stores/ui';
@@ -26,6 +26,10 @@ const workspaceStore = useWorkspaceStore();
 const { dragState, startDrag, setHover, clearHover, endDrag, isDragging } = useDragDrop();
 
 const task = computed(() => props.node.task);
+
+const emit = defineEmits<{
+  (e: 'context-menu', payload: { task: typeof task.value; x: number; y: number }): void;
+}>();
 const tagDefs = computed(() =>
   task.value.tags.map((name) => {
     const def = tagStore.tagMap.get(name);
@@ -157,40 +161,11 @@ function onDelete() {
   );
 }
 
-// —— 右键菜单 ——
-const contextMenu = ref({ visible: false, x: 0, y: 0 });
-
+// —— 右键菜单（通过 emit 传递给父组件） ——
 function onContextMenu(e: MouseEvent) {
   e.preventDefault();
-  contextMenu.value = { visible: true, x: e.clientX, y: e.clientY };
+  emit('context-menu', { task: task.value, x: e.clientX, y: e.clientY });
 }
-
-function closeContextMenu() {
-  contextMenu.value.visible = false;
-}
-
-function onMenuCreateChild() {
-  closeContextMenu();
-  onCreateChild();
-}
-
-function onMenuArchive() {
-  closeContextMenu();
-  onArchive();
-}
-
-function onMenuDelete() {
-  closeContextMenu();
-  onDelete();
-}
-
-onMounted(() => {
-  document.addEventListener('click', closeContextMenu);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', closeContextMenu);
-});
 </script>
 
 <template>
@@ -263,41 +238,6 @@ onUnmounted(() => {
       <span class="text-xs text-muted-foreground break-words whitespace-pre-wrap">{{ task.note }}</span>
     </div>
 
-    <!-- 右键菜单 -->
-    <Teleport to="body">
-      <div
-        v-if="contextMenu.visible"
-        class="fixed z-50 min-w-[160px] py-1 bg-card border border-border rounded-md shadow-lg"
-        :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
-        @click.stop
-      >
-        <button
-          type="button"
-          class="w-full px-3 py-1.5 text-sm text-left hover:bg-muted flex items-center gap-2"
-          @click="onMenuCreateChild"
-        >
-          <CornerDownRight class="w-3.5 h-3.5" />
-          创建子项
-        </button>
-        <div class="border-t border-border my-1" />
-        <button
-          type="button"
-          class="w-full px-3 py-1.5 text-sm text-left hover:bg-muted flex items-center gap-2"
-          @click="onMenuArchive"
-        >
-          <Archive class="w-3.5 h-3.5" />
-          归档
-        </button>
-        <button
-          type="button"
-          class="w-full px-3 py-1.5 text-sm text-left hover:bg-muted text-destructive flex items-center gap-2"
-          @click="onMenuDelete"
-        >
-          <Trash2 class="w-3.5 h-3.5" />
-          删除
-        </button>
-      </div>
-    </Teleport>
     <!-- 子任务（├─ / └─ 前缀，递归） -->
     <div v-if="node.children.length" class="pl-8 pr-2 space-y-1">
       <TaskNodeRow
@@ -306,6 +246,7 @@ onUnmounted(() => {
         :node="child"
         :prefix="i === node.children.length - 1 ? '└─' : '├─'"
         :is-root="false"
+        @context-menu="(payload) => emit('context-menu', payload)"
       />
     </div>
   </div>

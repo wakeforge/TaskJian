@@ -9,6 +9,14 @@ const props = defineProps<{ tasks: TreeNode[] }>();
 const workspaceStore = useWorkspaceStore();
 const { dragState, endDrag } = useDragDrop();
 
+const emit = defineEmits<{
+  (e: 'context-menu', payload: { task: TreeNode['task']; x: number; y: number }): void;
+}>();
+
+function onContextMenu(payload: { task: TreeNode['task']; x: number; y: number }) {
+  emit('context-menu', payload);
+}
+
 // 空白区域 drop：拖到根级末尾
 function onDragOver(e: DragEvent) {
   if (!dragState.value.draggingId) return;
@@ -35,7 +43,12 @@ function onDrop(e: DragEvent) {
     @dragover="onDragOver"
     @drop="onDrop"
   >
-    <TaskNodeRow v-for="node in tasks" :key="node.task.id" :node="node" />
+    <TaskNodeRow
+      v-for="node in tasks"
+      :key="node.task.id"
+      :node="node"
+      @context-menu="onContextMenu"
+    />
     <div
       v-if="tasks.length === 0"
       class="flex flex-col items-center justify-center py-12 text-muted-foreground"

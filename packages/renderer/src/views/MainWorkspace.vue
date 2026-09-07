@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { CornerDownRight, Archive, Trash2 } from 'lucide-vue-next';
 import { useWorkspaceStore } from '../stores/workspace';
+import { useUiStore } from '../stores/ui';
+import type { TaskNode } from '@taskjian/shared';
 import TitleBar from '../components/TitleBar.vue';
 import Sidebar from '../components/Sidebar.vue';
 import FilterBar from '../components/FilterBar.vue';
@@ -13,6 +16,59 @@ import TagFilterPopover from '../components/TagFilterPopover.vue';
 import StatusFilterPopover from '../components/StatusFilterPopover.vue';
 
 const workspaceStore = useWorkspaceStore();
+const uiStore = useUiStore();
+
+// —— 右键菜单状态 ——
+const contextMenu = ref<{ visible: boolean; x: number; y: number; task: TaskNode | null }>({
+  visible: false,
+  x: 0,
+  y: 0,
+  task: null,
+});
+
+function onContextMenu(payload: { task: TaskNode; x: number; y: number }) {
+  contextMenu.value = { visible: true, x: payload.x, y: payload.y, task: payload.task };
+}
+
+function closeContextMenu() {
+  contextMenu.value.visible = false;
+}
+
+function onMenuCreateChild() {
+  if (!contextMenu.value.task) return;
+  const task = contextMenu.value.task;
+  closeContextMenu();
+  uiStore.openTaskEdit(null, {
+    parentId: task.id,
+    groupId: task.groupId ?? null,
+  });
+}
+
+function onMenuArchive() {
+  if (!contextMenu.value.task) return;
+  const task = contextMenu.value.task;
+  closeContextMenu();
+  uiStore.openConfirm('归档任务', `确定归档「${task.title}」吗？`, () =>
+    workspaceStore.archiveTask(task.id),
+  );
+}
+
+function onMenuDelete() {
+  if (!contextMenu.value.task) return;
+  const task = contextMenu.value.task;
+  closeContextMenu();
+  uiStore.openConfirm('删除任务', `确定删除「${task.title}」吗？此操作不可撤销。`, () =>
+    workspaceStore.deleteTask(task.id),
+  );
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeContextMenu);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeContextMenu);
+});
 
 const sections = computed(() => workspaceStore.groupedFilteredSections);
 
@@ -64,11 +120,11 @@ function clearFilters() {
                   {{ sec.roots.length }} 项
                 </span>
               </h2>
-              <TaskTree :tasks="sec.roots" />
+              <TaskTree :tasks="sec.roots" @context-menu="onContextMenu" />
             </section>
           </template>
           <!-- 无分段（无分组 + 无未分组任务）：直接交给 TaskTree 渲染空态 -->
-          <TaskTree v-else-if="!emptyStateType" :tasks="workspaceStore.filteredTree" />
+          <TaskTree v-else-if="!emptyStateType" :tasks="workspaceStore.filteredTree" @context-menu="onContextMenu" />
           <!-- 空状态 -->
           <EmptyState
             v-else-if="emptyStateType === 'no-result'"
@@ -87,5 +143,41 @@ function clearFilters() {
     <!-- 工作区专属浮层（内部均 Teleport 到 body） -->
     <TagFilterPopover />
     <StatusFilterPopover />
+
+    <!-- 全局右键菜单 -->
+    <Teleport to="body">
+      <div
+        v-if="contextMenu.visible"
+        class="fixed z-50 min-w-[160px] py-1 bg-card border border-border rounded-md shadow-lg"
+        :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+        @click.stop
+      >
+        <button
+          type="button"
+          class="w-full px-3 py-1.5 text-sm text-left hover:bg-muted flex items-center gap-2"
+          @click="onMenuCreateChild"
+        >
+          <CornerDownRight class="w-3.5 h-3.5" />
+          创建子项
+        </button>
+        <div class="border-t border-border my-1" />
+        <button
+          type="button"
+          class="w-full px-3 py-1.5 text-sm text-left hover:bg-muted flex items-center gap-2"
+          @click="onMenuArchive"
+        >
+          <Archive class="w-3.5 h-3.5" />
+          归档
+        </button>
+        <button
+          type="button"
+          class="w-full px-3 py-1.5 text-sm text-left hover:bg-muted text-destructive flex items-center gap-2"
+          @click="onMenuDelete"
+        >
+          <Trash2 class="w-3.5 h-3.5" />
+          删除
+        </button>
+      </div>
+    </Teleport>
   </div>
 </template>
